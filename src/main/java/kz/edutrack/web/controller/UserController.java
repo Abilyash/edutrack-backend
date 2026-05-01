@@ -1,0 +1,56 @@
+package kz.edutrack.web.controller;
+
+import kz.edutrack.application.dto.UserDto;
+import kz.edutrack.application.mapper.UserMapper;
+import kz.edutrack.domain.model.user.Role;
+import kz.edutrack.domain.port.in.GetCurrentUserUseCase;
+import kz.edutrack.domain.port.in.SyncUserUseCase;
+import kz.edutrack.web.response.UserResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final GetCurrentUserUseCase getCurrentUser;
+    private final SyncUserUseCase syncUser;
+    private final UserMapper mapper;
+
+    /**
+     * GET /api/v1/users/me
+     * При первом запросе — создаёт запись в БД (sync).
+     * При последующих — возвращает существующую.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(@AuthenticationPrincipal Jwt jwt) {
+        UUID supabaseId = UUID.fromString(jwt.getSubject());
+        String email = jwt.getClaimAsString("email");
+        Role role = extractRole(jwt);
+
+        UserDto dto = mapper.toDto(syncUser.syncFromJwt(supabaseId, email, role));
+
+        return ResponseEntity.ok(new UserResponse(
+                dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()
+        ));
+    }
+
+    private Role extractRole(Jwt jwt) {
+        Map<String, Object> appMeta = jwt.getClaimAsMap("app_metadata");
+        if (appMeta == null) return Role.STUDENT;
+        try {
+            return Role.valueOf(appMeta.get("role").toString().toUpperCase());
+        } catch (Exception e) {
+            return Role.STUDENT;
+        }
+    }
+}

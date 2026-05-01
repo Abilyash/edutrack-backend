@@ -1,0 +1,17 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # JwtDecoder is mocked in tests — this value is never fetched
+          jwk-set-uri: http://localhost:0/jwks
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Flyway runs migrations
+
+supabase:
+  url: http://localhost:0
+  service-role-key: test-service-role-key
+  storage:
+    bucket: test-bucket

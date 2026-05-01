@@ -102,6 +102,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- ===== AWAITILITY (async assertions in integration tests) ===== -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- ===== TEST ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

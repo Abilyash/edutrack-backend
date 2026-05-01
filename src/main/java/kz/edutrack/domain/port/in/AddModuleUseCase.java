@@ -6,6 +6,6 @@ import kz.edutrack.domain.model.course.Topic;
 import java.util.UUID;
 
 public interface AddModuleUseCase {
-    CourseModule addModule(UUID courseId, String title);
-    Topic addTopic(UUID moduleId, String title, String content);
+    CourseModule addModule(UUID courseId, String title, UUID actorId);
+    Topic addTopic(UUID moduleId, String title, String content, UUID actorId);
 }

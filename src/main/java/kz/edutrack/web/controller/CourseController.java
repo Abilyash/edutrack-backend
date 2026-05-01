@@ -60,8 +60,10 @@ public class CourseController {
     @ResponseStatus(HttpStatus.CREATED)
     public CourseModuleDto addModule(
             @PathVariable UUID courseId,
-            @Valid @RequestBody CreateModuleRequest req) {
-        return mapper.toDto(addModule.addModule(courseId, req.title()));
+            @Valid @RequestBody CreateModuleRequest req,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+        return mapper.toDto(addModule.addModule(courseId, req.title(), actorId));
     }
 
     @PostMapping("/modules/{moduleId}/topics")
@@ -69,8 +71,10 @@ public class CourseController {
     @ResponseStatus(HttpStatus.CREATED)
     public TopicDto addTopic(
             @PathVariable UUID moduleId,
-            @Valid @RequestBody CreateTopicRequest req) {
-        return mapper.toDto(addModule.addTopic(moduleId, req.title(), req.content()));
+            @Valid @RequestBody CreateTopicRequest req,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID actorId = UUID.fromString(jwt.getSubject());
+        return mapper.toDto(addModule.addTopic(moduleId, req.title(), req.content(), actorId));
     }
 
     @PostMapping(value = "/topics/{topicId}/materials",
@@ -79,12 +83,15 @@ public class CourseController {
     @ResponseStatus(HttpStatus.CREATED)
     public MaterialDto uploadMaterial(
             @PathVariable UUID topicId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) throws IOException {
+        UUID actorId = UUID.fromString(jwt.getSubject());
         return mapper.toDto(uploadMaterial.uploadMaterial(
                 topicId,
                 file.getOriginalFilename(),
                 file.getBytes(),
-                file.getContentType()
+                file.getContentType(),
+                actorId
         ));
     }
 

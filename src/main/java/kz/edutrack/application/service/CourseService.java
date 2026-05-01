@@ -1,7 +1,10 @@
 package kz.edutrack.application.service;
 
+import kz.edutrack.domain.model.audit.AuditAction;
+import kz.edutrack.domain.model.audit.AuditLog;
 import kz.edutrack.domain.model.course.*;
 import kz.edutrack.domain.port.in.*;
+import kz.edutrack.domain.port.out.AuditEventPublisherPort;
 import kz.edutrack.domain.port.out.CourseRepositoryPort;
 import kz.edutrack.domain.port.out.MaterialStoragePort;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -22,6 +26,7 @@ public class CourseService implements
 
     private final CourseRepositoryPort courseRepository;
     private final MaterialStoragePort materialStorage;
+    private final AuditEventPublisherPort auditPublisher;
 
     // ── CreateCourseUseCase ────────────────────────────────────────────────
 
@@ -37,7 +42,19 @@ public class CourseService implements
                 .modules(List.of())
                 .createdAt(Instant.now())
                 .build();
-        return courseRepository.saveCourse(course);
+        Course saved = courseRepository.saveCourse(course);
+
+        auditPublisher.publish(AuditLog.builder()
+                .id(UUID.randomUUID())
+                .action(AuditAction.COURSE_CREATED)
+                .actorId(teacherId)
+                .targetId(saved.getId())
+                .targetType("COURSE")
+                .metadata(Map.of("title", title))
+                .occurredAt(Instant.now())
+                .build());
+
+        return saved;
     }
 
     // ── GetCourseUseCase ───────────────────────────────────────────────────
@@ -65,10 +82,10 @@ public class CourseService implements
 
     @Override
     @Transactional
-    public CourseModule addModule(UUID courseId, String title) {
-        if (!courseRepository.findCourseById(courseId).isPresent()) {
-            throw new IllegalStateException("Course not found: " + courseId);
-        }
+    public CourseModule addModule(UUID courseId, String title, UUID actorId) {
+        courseRepository.findCourseById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+
         int order = courseRepository.countModulesByCourseId(courseId);
         CourseModule module = CourseModule.builder()
                 .id(UUID.randomUUID())
@@ -77,12 +94,24 @@ public class CourseService implements
                 .orderIndex(order)
                 .topics(List.of())
                 .build();
-        return courseRepository.saveModule(module);
+        CourseModule saved = courseRepository.saveModule(module);
+
+        auditPublisher.publish(AuditLog.builder()
+                .id(UUID.randomUUID())
+                .action(AuditAction.MODULE_ADDED)
+                .actorId(actorId)
+                .targetId(saved.getId())
+                .targetType("MODULE")
+                .metadata(Map.of("courseId", courseId.toString(), "title", title))
+                .occurredAt(Instant.now())
+                .build());
+
+        return saved;
     }
 
     @Override
     @Transactional
-    public Topic addTopic(UUID moduleId, String title, String content) {
+    public Topic addTopic(UUID moduleId, String title, String content, UUID actorId) {
         int order = courseRepository.countTopicsByModuleId(moduleId);
         Topic topic = Topic.builder()
                 .id(UUID.randomUUID())
@@ -92,14 +121,27 @@ public class CourseService implements
                 .orderIndex(order)
                 .materials(List.of())
                 .build();
-        return courseRepository.saveTopic(topic);
+        Topic saved = courseRepository.saveTopic(topic);
+
+        auditPublisher.publish(AuditLog.builder()
+                .id(UUID.randomUUID())
+                .action(AuditAction.TOPIC_ADDED)
+                .actorId(actorId)
+                .targetId(saved.getId())
+                .targetType("TOPIC")
+                .metadata(Map.of("moduleId", moduleId.toString(), "title", title))
+                .occurredAt(Instant.now())
+                .build());
+
+        return saved;
     }
 
     // ── UploadMaterialUseCase ──────────────────────────────────────────────
 
     @Override
     @Transactional
-    public Material uploadMaterial(UUID topicId, String fileName, byte[] content, String contentType) {
+    public Material uploadMaterial(UUID topicId, String fileName, byte[] content,
+                                   String contentType, UUID actorId) {
         String storagePath = "topics/" + topicId + "/" + fileName;
         String publicUrl = materialStorage.upload(storagePath, content, contentType);
 
@@ -113,6 +155,19 @@ public class CourseService implements
                 .sizeBytes(content.length)
                 .uploadedAt(Instant.now())
                 .build();
-        return courseRepository.saveMaterial(material);
+        Material saved = courseRepository.saveMaterial(material);
+
+        auditPublisher.publish(AuditLog.builder()
+                .id(UUID.randomUUID())
+                .action(AuditAction.MATERIAL_UPLOADED)
+                .actorId(actorId)
+                .targetId(saved.getId())
+                .targetType("MATERIAL")
+                .metadata(Map.of("topicId", topicId.toString(), "fileName", fileName,
+                                 "sizeBytes", String.valueOf(content.length)))
+                .occurredAt(Instant.now())
+                .build());
+
+        return saved;
     }
 }

@@ -17,13 +17,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${SUPABASE_JWKS_URI}
-          issuer-uri: ${SUPABASE_ISSUER_URI}
-
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
@@ -49,6 +42,7 @@ spring:
 supabase:
   url: ${SUPABASE_URL}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
+  jwt-secret: ${SUPABASE_JWT_SECRET}
   storage:
     bucket: ${SUPABASE_STORAGE_BUCKET:materials}
 
@@ -60,3 +54,7 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+logging:
+  level:
+    org.springframework.security: DEBUG

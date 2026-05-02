@@ -21,7 +21,6 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Supabase JWKS endpoint: https://<project>.supabase.co/rest/v1/auth/v1/.well-known/jwks.json
           jwk-set-uri: ${SUPABASE_JWKS_URI}
           issuer-uri: ${SUPABASE_ISSUER_URI}
 
@@ -42,17 +41,16 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+
 supabase:
   url: ${SUPABASE_URL}
   service-role-key: ${SUPABASE_SERVICE_ROLE_KEY}
   storage:
     bucket: ${SUPABASE_STORAGE_BUCKET:materials}
-
-spring:
-  servlet:
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 55MB
 
 server:
   port: 8080

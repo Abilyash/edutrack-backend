@@ -87,6 +87,29 @@ public class CourseService implements
 
     @Override
     @Transactional
+    public void deleteCourse(UUID courseId, UUID actorId) {
+        Course course = courseRepository.findCourseById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+        requireOwner(course, actorId);
+        courseRepository.deleteCourseById(courseId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteMaterial(UUID materialId, UUID actorId) {
+        Material material = courseRepository.findMaterialById(materialId)
+                .orElseThrow(() -> new IllegalStateException("Material not found: " + materialId));
+        Topic topic = courseRepository.findTopicById(material.getTopicId());
+        CourseModule module = courseRepository.findModuleById(topic.getModuleId());
+        Course course = courseRepository.findCourseById(module.getCourseId())
+                .orElseThrow(() -> new IllegalStateException("Course not found"));
+        requireOwner(course, actorId);
+        try { materialStorage.delete(material.getStoragePath()); } catch (Exception ignored) {}
+        courseRepository.deleteMaterialById(materialId);
+    }
+
+    @Override
+    @Transactional
     public Course togglePublish(UUID courseId, boolean published, UUID actorId) {
         Course course = courseRepository.findCourseById(courseId)
                 .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));

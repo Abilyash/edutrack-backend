@@ -9,4 +9,5 @@ public interface GradeSubmissionUseCase {
     List<Submission> getSubmissionsByTopic(UUID topicId);
     List<Submission> getMySubmissions(UUID studentId);
     Submission grade(UUID submissionId, int score, String comment, UUID teacherId);
+    void deleteSubmission(UUID submissionId, UUID studentId);
 }

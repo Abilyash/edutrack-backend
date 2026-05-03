@@ -53,6 +53,15 @@ public class SubmissionController {
         return gradeSubmission.getMySubmissions(studentId).stream().map(mapper::toDto).toList();
     }
 
+    @DeleteMapping("/{submissionId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSubmission(@PathVariable UUID submissionId,
+                                 @AuthenticationPrincipal Jwt jwt) {
+        UUID studentId = UUID.fromString(jwt.getSubject());
+        gradeSubmission.deleteSubmission(submissionId, studentId);
+    }
+
     @PostMapping("/{submissionId}/grade")
     @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public SubmissionDto grade(

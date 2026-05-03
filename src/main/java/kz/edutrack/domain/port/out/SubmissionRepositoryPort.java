@@ -15,4 +15,5 @@ public interface SubmissionRepositoryPort {
     boolean existsByTopicIdAndStudentId(UUID topicId, UUID studentId);
     Grade saveGrade(Grade grade);
     Submission updateStatus(UUID submissionId, kz.edutrack.domain.model.submission.SubmissionStatus status);
+    void deleteById(UUID id);
 }

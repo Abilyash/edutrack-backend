@@ -7,4 +7,6 @@ import java.util.UUID;
 public interface CreateCourseUseCase {
     Course createCourse(String title, String description, UUID teacherId);
     Course togglePublish(UUID courseId, boolean published, UUID actorId);
+    void deleteCourse(UUID courseId, UUID actorId);
+    void deleteMaterial(UUID materialId, UUID actorId);
 }

@@ -31,6 +31,7 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [tab, setTab] = useState<Tab>('all')
+  const [search, setSearch] = useState('')
 
   const loadCourses = () => {
     setLoading(true)
@@ -63,9 +64,9 @@ export default function CoursesPage() {
     }
   }
 
-  const displayed = tab === 'my'
-    ? courses.filter(c => enrolledIds.has(c.id))
-    : courses
+  const q = search.trim().toLowerCase()
+  const displayed = (tab === 'my' ? courses.filter(c => enrolledIds.has(c.id)) : courses)
+    .filter(c => !q || c.title.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q))
 
   if (loading) return <Spinner />
 
@@ -84,6 +85,25 @@ export default function CoursesPage() {
             className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
           >
             + Создать курс
+          </button>
+        )}
+      </div>
+
+      <div className="relative mb-5">
+        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">🔍</span>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Поиск по названию или описанию..."
+          className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 text-lg"
+          >
+            ×
           </button>
         )}
       </div>
@@ -116,16 +136,23 @@ export default function CoursesPage() {
 
       {displayed.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4">{tab === 'my' ? '🎓' : '📚'}</div>
+          <div className="text-5xl mb-4">{q ? '🔎' : tab === 'my' ? '🎓' : '📚'}</div>
           <p className="text-gray-500 font-medium">
-            {tab === 'my' ? 'Вы ещё не записались ни на один курс' : 'Курсов пока нет'}
+            {q
+              ? `Ничего не найдено по запросу «${search}»`
+              : tab === 'my' ? 'Вы ещё не записались ни на один курс' : 'Курсов пока нет'}
           </p>
-          {tab === 'my' && (
+          {q && (
+            <button onClick={() => setSearch('')} className="mt-3 text-sm text-indigo-600 hover:underline">
+              Сбросить поиск
+            </button>
+          )}
+          {!q && tab === 'my' && (
             <button onClick={() => setTab('all')} className="mt-3 text-sm text-indigo-600 hover:underline">
               Посмотреть все курсы →
             </button>
           )}
-          {tab === 'all' && isTeacher && (
+          {!q && tab === 'all' && isTeacher && (
             <p className="text-gray-400 text-sm mt-1">Создайте первый курс, нажав кнопку выше</p>
           )}
         </div>

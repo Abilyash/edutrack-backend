@@ -26,4 +26,7 @@ public interface CourseRepositoryPort {
     int countTopicsByModuleId(UUID moduleId);
 
     Material saveMaterial(Material material);
+    Optional<Material> findMaterialById(UUID id);
+    void deleteMaterialById(UUID id);
+    void deleteCourseById(UUID id);
 }

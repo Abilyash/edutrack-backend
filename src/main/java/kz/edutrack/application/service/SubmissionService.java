@@ -72,6 +72,18 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
 
     @Override
     @Transactional
+    public void deleteSubmission(UUID submissionId, UUID studentId) {
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new IllegalStateException("Submission not found: " + submissionId));
+        if (!submission.getStudentId().equals(studentId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not your submission");
+        }
+        try { materialStorage.delete(submission.getStoragePath()); } catch (Exception ignored) {}
+        submissionRepository.deleteById(submissionId);
+    }
+
+    @Override
+    @Transactional
     public Submission grade(UUID submissionId, int score, String comment, UUID teacherId) {
         Grade grade = Grade.builder()
                 .id(UUID.randomUUID())

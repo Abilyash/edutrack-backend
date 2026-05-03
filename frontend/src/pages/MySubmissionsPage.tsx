@@ -24,15 +24,29 @@ export default function MySubmissionsPage() {
   const [submissions, setSubmissions] = useState<SubmissionDto[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const load = () => {
     api.get('/submissions/my')
       .then(r => setSubmissions(r.data))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleDelete = async (id: string, fileName: string) => {
+    if (!window.confirm(`Удалить сдачу «${fileName}»?`)) return
+    try {
+      await api.delete(`/submissions/${id}`)
+    } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || 'Неизвестная ошибка'
+      alert(`Ошибка при удалении: ${detail}`)
+    } finally {
+      load()
+    }
+  }
 
   if (loading) return <Spinner />
 
-  const graded = submissions.filter(s => s.grade)
+  const graded = submissions.filter((s: SubmissionDto) => s.grade)
   const avg = graded.length > 0
     ? Math.round(graded.reduce((sum, s) => sum + s.grade!.score, 0) / graded.length)
     : null
@@ -82,7 +96,7 @@ export default function MySubmissionsPage() {
                   </p>
                 )}
               </div>
-              <div className="shrink-0 ml-4">
+              <div className="shrink-0 ml-4 flex flex-col items-end gap-2">
                 {s.grade ? (
                   <span className="bg-green-100 text-green-700 text-sm font-bold px-3 py-1 rounded-full">
                     {s.grade.score}/100
@@ -91,6 +105,14 @@ export default function MySubmissionsPage() {
                   <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-1 rounded-full">
                     Ожидает проверки
                   </span>
+                )}
+                {!s.grade && (
+                  <button
+                    onClick={() => handleDelete(s.id, s.fileName)}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    Удалить
+                  </button>
                 )}
               </div>
             </div>

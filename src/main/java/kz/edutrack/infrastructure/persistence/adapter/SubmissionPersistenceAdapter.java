@@ -60,6 +60,11 @@ public class SubmissionPersistenceAdapter implements SubmissionRepositoryPort {
     }
 
     @Override
+    public void deleteById(UUID id) {
+        submissionRepo.deleteById(id);
+    }
+
+    @Override
     public Submission updateStatus(UUID submissionId, SubmissionStatus status) {
         SubmissionJpaEntity e = submissionRepo.findById(submissionId)
                 .orElseThrow(() -> new IllegalStateException("Submission not found: " + submissionId));

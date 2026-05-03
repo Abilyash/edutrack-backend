@@ -62,6 +62,7 @@ export default function CoursePage() {
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [publishLoading, setPublishLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const isOwner = isTeacher && course?.teacherId === user?.id
   const [openModules, setOpenModules] = useState<Set<string>>(new Set())
 
@@ -100,6 +101,23 @@ export default function CoursePage() {
     } finally {
       setPublishLoading(false)
     }
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!window.confirm(`Удалить курс «${course?.title}»? Это действие необратимо.`)) return
+    setDeleteLoading(true)
+    try {
+      await api.delete(`/courses/${id}`)
+      navigate('/')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const handleDeleteMaterial = async (topicId: string, materialId: string, fileName: string) => {
+    if (!window.confirm(`Удалить файл «${fileName}»?`)) return
+    await api.delete(`/courses/topics/${topicId}/materials/${materialId}`)
+    loadCourse()
   }
 
   const loadSubmissions = () => {
@@ -175,17 +193,26 @@ export default function CoursePage() {
         {isTeacher && (
           <div className="flex gap-2 shrink-0 ml-4">
             {isOwner && (
-              <button
-                onClick={handleTogglePublish}
-                disabled={publishLoading}
-                className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-                  course.published
-                    ? 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                    : 'border-green-600 text-green-600 hover:bg-green-50'
-                }`}
-              >
-                {publishLoading ? '...' : course.published ? 'Снять' : 'Опубликовать'}
-              </button>
+              <>
+                <button
+                  onClick={handleTogglePublish}
+                  disabled={publishLoading}
+                  className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+                    course.published
+                      ? 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                      : 'border-green-600 text-green-600 hover:bg-green-50'
+                  }`}
+                >
+                  {publishLoading ? '...' : course.published ? 'Снять' : 'Опубликовать'}
+                </button>
+                <button
+                  onClick={handleDeleteCourse}
+                  disabled={deleteLoading}
+                  className="text-sm px-4 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {deleteLoading ? '...' : 'Удалить курс'}
+                </button>
+              </>
             )}
             <button
               onClick={() => navigate(`/courses/${id}/journal`)}
@@ -275,16 +302,26 @@ export default function CoursePage() {
                         {t.materials?.length > 0 && (
                           <div className="mt-2 flex flex-col gap-1">
                             {t.materials.map(mat => (
-                              <a
-                                key={mat.id}
-                                href={mat.publicUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:underline"
-                              >
-                                📎 {mat.fileName}
-                                <span className="text-gray-400">({(mat.sizeBytes / 1024).toFixed(1)} KB)</span>
-                              </a>
+                              <div key={mat.id} className="inline-flex items-center gap-1.5">
+                                <a
+                                  href={mat.publicUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-indigo-600 hover:underline"
+                                >
+                                  📎 {mat.fileName}
+                                  <span className="text-gray-400 ml-1">({(mat.sizeBytes / 1024).toFixed(1)} KB)</span>
+                                </a>
+                                {isOwner && (
+                                  <button
+                                    onClick={() => handleDeleteMaterial(t.id, mat.id, mat.fileName)}
+                                    className="text-gray-300 hover:text-red-500 text-xs leading-none"
+                                    title="Удалить файл"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
                             ))}
                           </div>
                         )}

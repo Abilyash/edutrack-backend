@@ -111,6 +111,22 @@ public class CourseController {
         return getCourse.getCoursesByTeacher(teacherId).stream().map(mapper::toDto).toList();
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCourse(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        createCourse.deleteCourse(id, UUID.fromString(jwt.getSubject()));
+    }
+
+    @DeleteMapping("/topics/{topicId}/materials/{materialId}")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMaterial(@PathVariable UUID topicId,
+                               @PathVariable UUID materialId,
+                               @AuthenticationPrincipal Jwt jwt) {
+        createCourse.deleteMaterial(materialId, UUID.fromString(jwt.getSubject()));
+    }
+
     @PatchMapping("/{id}/publish")
     @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public CourseDto publish(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {

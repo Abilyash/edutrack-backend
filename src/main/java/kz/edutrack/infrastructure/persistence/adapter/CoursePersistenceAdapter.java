@@ -111,6 +111,21 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
     // ── Material ───────────────────────────────────────────────────────────
 
     @Override
+    public Optional<Material> findMaterialById(UUID id) {
+        return materialRepo.findById(id).map(this::toDomain);
+    }
+
+    @Override
+    public void deleteMaterialById(UUID id) {
+        materialRepo.deleteById(id);
+    }
+
+    @Override
+    public void deleteCourseById(UUID id) {
+        courseRepo.deleteById(id);
+    }
+
+    @Override
     public Material saveMaterial(Material material) {
         TopicJpaEntity topicRef = topicRepo.getReferenceById(material.getTopicId());
         MaterialJpaEntity entity = MaterialJpaEntity.builder()

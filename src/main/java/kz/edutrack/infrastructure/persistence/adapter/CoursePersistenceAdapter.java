@@ -29,12 +29,12 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
 
     @Override
     public Optional<Course> findCourseById(UUID id) {
-        return courseRepo.findWithFullTreeById(id).map(this::toDomain);
+        return courseRepo.findById(id).map(this::toDomain);
     }
 
     @Override
     public List<Course> findAllCourses() {
-        return courseRepo.findAll().stream().map(this::toDomain).toList();
+        return courseRepo.findAllWithModules().stream().map(this::toDomain).toList();
     }
 
     @Override

@@ -48,6 +48,9 @@ supabase:
 
 server:
   port: 8080
+  error:
+    include-message: always
+    include-exception: true
 
 management:
   endpoints:

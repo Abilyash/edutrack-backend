@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useUser } from '../context/UserContext'
 import UploadMaterialModal from '../components/UploadMaterialModal'
 import SubmitWorkModal from '../components/SubmitWorkModal'
 import SubmissionsModal from '../components/SubmissionsModal'
+import Spinner from '../components/Spinner'
 
 interface Material {
   id: string
@@ -55,6 +56,7 @@ interface Course {
 
 export default function CoursePage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { isTeacher, user } = useUser()
   const isStudent = user?.role === 'STUDENT'
   const [course, setCourse] = useState<Course | null>(null)
@@ -136,7 +138,7 @@ export default function CoursePage() {
     }
   }
 
-  if (loading) return <p className="text-gray-500">Загрузка...</p>
+  if (loading) return <Spinner />
   if (!course) return <p className="text-red-500">Курс не найден</p>
 
   return (
@@ -151,12 +153,20 @@ export default function CoursePage() {
           <p className="text-gray-500 mt-1">{course.description}</p>
         </div>
         {isTeacher && (
-          <button
-            onClick={() => setAddingModule(true)}
-            className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 shrink-0 ml-4"
-          >
-            + Модуль
-          </button>
+          <div className="flex gap-2 shrink-0 ml-4">
+            <button
+              onClick={() => navigate(`/courses/${id}/journal`)}
+              className="border border-indigo-600 text-indigo-600 text-sm px-4 py-2 rounded-lg hover:bg-indigo-50"
+            >
+              Журнал
+            </button>
+            <button
+              onClick={() => setAddingModule(true)}
+              className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700"
+            >
+              + Модуль
+            </button>
+          </div>
         )}
       </div>
 
@@ -190,7 +200,11 @@ export default function CoursePage() {
       )}
 
       {course.modules.length === 0 ? (
-        <p className="text-gray-400">Модулей пока нет.</p>
+        <div className="text-center py-16">
+          <div className="text-5xl mb-4">📂</div>
+          <p className="text-gray-500 font-medium">Модулей пока нет</p>
+          {isTeacher && <p className="text-gray-400 text-sm mt-1">Нажмите «+ Модуль» чтобы добавить первый</p>}
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {course.modules.map(m => (

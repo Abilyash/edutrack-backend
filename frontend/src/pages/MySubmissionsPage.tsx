@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../lib/api'
+import Spinner from '../components/Spinner'
 
 interface GradeDto {
   id: string
@@ -29,7 +30,7 @@ export default function MySubmissionsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-gray-500">Загрузка...</p>
+  if (loading) return <Spinner />
 
   const graded = submissions.filter(s => s.grade)
   const avg = graded.length > 0
@@ -48,7 +49,11 @@ export default function MySubmissionsPage() {
       </div>
 
       {submissions.length === 0 ? (
-        <p className="text-gray-400">Вы ещё ничего не сдавали.</p>
+          <div className="text-center py-20">
+          <div className="text-5xl mb-4">📭</div>
+          <p className="text-gray-500 font-medium">Вы ещё ничего не сдавали</p>
+          <p className="text-gray-400 text-sm mt-1">Откройте курс и нажмите «Сдать работу» в нужной теме</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
           {submissions.map(s => (

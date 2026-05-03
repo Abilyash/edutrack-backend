@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../lib/api'
+import Spinner from '../components/Spinner'
 
 interface User {
   id: string
@@ -31,7 +32,7 @@ export default function ProfilePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <p className="text-gray-500">Загрузка...</p>
+  if (loading) return <Spinner />
   if (!user) return <p className="text-red-500">Ошибка загрузки профиля</p>
 
   return (

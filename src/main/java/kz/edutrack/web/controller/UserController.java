@@ -31,6 +31,13 @@ public class UserController {
      * При первом запросе — создаёт запись в БД (sync).
      * При последующих — возвращает существующую.
      */
+    @GetMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
+        UserDto dto = mapper.toDto(getCurrentUser.getCurrentUser(id));
+        return ResponseEntity.ok(new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal Jwt jwt) {
         UUID supabaseId = UUID.fromString(jwt.getSubject());

@@ -12,6 +12,7 @@ interface Course {
   teacherId: string
   published: boolean
   createdAt: string
+  modules: { id: string }[]
 }
 
 const PALETTE = [
@@ -192,9 +193,16 @@ export default function CoursesPage() {
                     </div>
 
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                      <span className="text-xs text-gray-400">
-                        {new Date(c.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">
+                          {new Date(c.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
+                        {c.modules?.length > 0 && (
+                          <span className="text-xs text-gray-400">
+                            📂 {c.modules.length} {c.modules.length === 1 ? 'модуль' : c.modules.length < 5 ? 'модуля' : 'модулей'}
+                          </span>
+                        )}
+                      </div>
                       {isStudent ? (
                         <button
                           onClick={e => handleEnroll(e, c.id)}

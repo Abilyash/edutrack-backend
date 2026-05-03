@@ -47,6 +47,7 @@ export default function GradesJournalPage() {
   const { id } = useParams<{ id: string }>()
   const [course, setCourse] = useState<Course | null>(null)
   const [rows, setRows] = useState<TopicRow[]>([])
+  const [studentNames, setStudentNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -70,6 +71,17 @@ export default function GradesJournalPage() {
       )
 
       setRows(results)
+
+      const uniqueIds = [...new Set(results.flatMap(r => r.submissions.map(s => s.studentId)))]
+      const names: Record<string, string> = {}
+      await Promise.all(
+        uniqueIds.map(sid =>
+          api.get(`/users/${sid}`)
+            .then(r => { names[sid] = r.data.name || r.data.email })
+            .catch(() => { names[sid] = sid.substring(0, 8) + '…' })
+        )
+      )
+      setStudentNames(names)
     }).finally(() => setLoading(false))
   }, [id])
 
@@ -139,8 +151,8 @@ export default function GradesJournalPage() {
                   <tbody>
                     {row.submissions.map(s => (
                       <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                        <td className="px-5 py-3 text-gray-500 font-mono text-xs">
-                          {s.studentId.substring(0, 8)}…
+                        <td className="px-5 py-3 text-gray-700 text-sm">
+                          {studentNames[s.studentId] ?? s.studentId.substring(0, 8) + '…'}
                         </td>
                         <td className="px-5 py-3">
                           <a

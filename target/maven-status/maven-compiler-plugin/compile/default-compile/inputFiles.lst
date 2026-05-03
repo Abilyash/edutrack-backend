@@ -11,6 +11,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\mapper\Subm
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\mapper\UserMapper.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\service\AuditService.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\service\CourseService.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\service\EnrollmentService.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\service\SubmissionService.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\application\service\UserService.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\audit\AuditAction.java
@@ -20,6 +21,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\course\Cou
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\course\Material.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\course\MaterialType.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\course\Topic.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\enrollment\Enrollment.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\submission\Grade.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\submission\Submission.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\submission\SubmissionStatus.java
@@ -27,6 +29,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\user\Role.
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\model\user\User.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\AddModuleUseCase.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\CreateCourseUseCase.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\EnrollCourseUseCase.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\GetAuditLogsUseCase.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\GetCourseUseCase.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\domain\port\in\GetCurrentUserUseCase.java
@@ -53,6 +56,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persiste
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\AuditLogJpaEntity.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\CourseJpaEntity.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\CourseModuleJpaEntity.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\EnrollmentJpaEntity.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\GradeJpaEntity.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\MaterialJpaEntity.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\entity\SubmissionJpaEntity.java
@@ -61,6 +65,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persiste
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\AuditLogJpaRepository.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\CourseJpaRepository.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\CourseModuleJpaRepository.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\EnrollmentJpaRepository.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\GradeJpaRepository.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\MaterialJpaRepository.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\persistence\repository\SubmissionJpaRepository.java
@@ -74,6 +79,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\supabase
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\advice\GlobalExceptionHandler.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\AuditController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\CourseController.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\EnrollmentController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\SubmissionController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\UserController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\CreateCourseRequest.java

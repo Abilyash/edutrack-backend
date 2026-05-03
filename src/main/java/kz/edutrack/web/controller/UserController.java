@@ -3,8 +3,11 @@ package kz.edutrack.web.controller;
 import kz.edutrack.application.dto.UserDto;
 import kz.edutrack.application.mapper.UserMapper;
 import kz.edutrack.domain.model.user.Role;
+import jakarta.validation.Valid;
+import kz.edutrack.application.service.UserService;
 import kz.edutrack.domain.port.in.GetCurrentUserUseCase;
 import kz.edutrack.domain.port.in.SyncUserUseCase;
+import kz.edutrack.web.request.UpdateNameRequest;
 import kz.edutrack.web.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +27,7 @@ public class UserController {
 
     private final GetCurrentUserUseCase getCurrentUser;
     private final SyncUserUseCase syncUser;
+    private final UserService userService;
     private final UserMapper mapper;
 
     /**
@@ -35,6 +39,14 @@ public class UserController {
     @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
         UserDto dto = mapper.toDto(getCurrentUser.getCurrentUser(id));
+        return ResponseEntity.ok(new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()));
+    }
+
+    @PatchMapping("/me")
+    public ResponseEntity<UserResponse> updateMe(@Valid @RequestBody UpdateNameRequest req,
+                                                  @AuthenticationPrincipal Jwt jwt) {
+        UUID id = UUID.fromString(jwt.getSubject());
+        UserDto dto = mapper.toDto(userService.updateName(id, req.name()));
         return ResponseEntity.ok(new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()));
     }
 

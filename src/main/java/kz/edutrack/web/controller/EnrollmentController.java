@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -36,5 +37,11 @@ public class EnrollmentController {
     @PreAuthorize("hasRole('STUDENT')")
     public List<UUID> myEnrollments(@AuthenticationPrincipal Jwt jwt) {
         return enrollCourse.getEnrolledCourseIds(UUID.fromString(jwt.getSubject()));
+    }
+
+    @GetMapping("/courses/{courseId}/count")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public Map<String, Integer> enrolledCount(@PathVariable UUID courseId) {
+        return Map.of("count", enrollCourse.countEnrolled(courseId));
     }
 }

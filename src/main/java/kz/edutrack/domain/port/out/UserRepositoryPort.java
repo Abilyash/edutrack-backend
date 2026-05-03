@@ -9,4 +9,5 @@ public interface UserRepositoryPort {
     User save(User user);
     Optional<User> findById(UUID id);
     boolean existsById(UUID id);
+    User updateName(UUID id, String name);
 }

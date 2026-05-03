@@ -10,4 +10,5 @@ public interface EnrollCourseUseCase {
     void unenroll(UUID courseId, UUID studentId);
     boolean isEnrolled(UUID courseId, UUID studentId);
     List<UUID> getEnrolledCourseIds(UUID studentId);
+    int countEnrolled(UUID courseId);
 }

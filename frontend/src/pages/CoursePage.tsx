@@ -63,6 +63,7 @@ export default function CoursePage() {
   const [loading, setLoading] = useState(true)
   const [publishLoading, setPublishLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [enrolledCount, setEnrolledCount] = useState<number | null>(null)
   const isOwner = isTeacher && course?.teacherId === user?.id
   const [openModules, setOpenModules] = useState<Set<string>>(new Set())
 
@@ -180,6 +181,13 @@ export default function CoursePage() {
 
   useEffect(() => { loadCourse() }, [id])
   useEffect(() => { loadSubmissions() }, [isStudent])
+  useEffect(() => {
+    if (isTeacher && id) {
+      api.get(`/enrollments/courses/${id}/count`)
+        .then(r => setEnrolledCount(r.data.count))
+        .catch(() => {})
+    }
+  }, [isTeacher, id])
 
   const toggleModule = (moduleId: string) => {
     setOpenModules(prev => {
@@ -267,6 +275,11 @@ export default function CoursePage() {
                 )}
               </div>
               <p className="text-gray-500 mt-1">{course.description}</p>
+              {isTeacher && enrolledCount !== null && (
+                <p className="text-xs text-gray-400 mt-1.5">
+                  👥 {enrolledCount} {enrolledCount === 1 ? 'студент записан' : enrolledCount < 5 ? 'студента записано' : 'студентов записано'}
+                </p>
+              )}
             </div>
           )}
         </div>

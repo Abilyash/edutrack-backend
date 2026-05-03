@@ -62,6 +62,11 @@ public class UserService implements GetCurrentUserUseCase, SyncUserUseCase {
         return user;
     }
 
+    @Transactional
+    public User updateName(UUID userId, String name) {
+        return userRepository.updateName(userId, name);
+    }
+
     private String extractNameFromEmail(String email) {
         return email.substring(0, email.indexOf('@'));
     }

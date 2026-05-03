@@ -57,6 +57,12 @@ public class EnrollmentService implements EnrollCourseUseCase {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public int countEnrolled(UUID courseId) {
+        return enrollmentRepo.countByCourseId(courseId);
+    }
+
     private Enrollment toDomain(EnrollmentJpaEntity e) {
         return Enrollment.builder()
                 .id(e.getId())

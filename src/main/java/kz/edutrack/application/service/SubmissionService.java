@@ -5,8 +5,10 @@ import kz.edutrack.domain.model.audit.AuditLog;
 import kz.edutrack.domain.model.submission.*;
 import kz.edutrack.domain.port.in.GradeSubmissionUseCase;
 import kz.edutrack.domain.port.in.SubmitWorkUseCase;
+import kz.edutrack.domain.model.notification.Notification;
 import kz.edutrack.domain.port.out.AuditEventPublisherPort;
 import kz.edutrack.domain.port.out.MaterialStoragePort;
+import kz.edutrack.domain.port.out.NotificationRepositoryPort;
 import kz.edutrack.domain.port.out.SubmissionRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     private final SubmissionRepositoryPort submissionRepository;
     private final MaterialStoragePort materialStorage;
     private final AuditEventPublisherPort auditPublisher;
+    private final NotificationRepositoryPort notificationRepository;
 
     @Override
     @Transactional
@@ -85,6 +88,9 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     @Override
     @Transactional
     public Submission grade(UUID submissionId, int score, String comment, UUID teacherId) {
+        Submission submission = submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new IllegalStateException("Submission not found: " + submissionId));
+
         Grade grade = Grade.builder()
                 .id(UUID.randomUUID())
                 .submissionId(submissionId)
@@ -103,6 +109,14 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
                 .targetType("SUBMISSION")
                 .metadata(Map.of("score", String.valueOf(score)))
                 .occurredAt(Instant.now())
+                .build());
+
+        notificationRepository.save(Notification.builder()
+                .id(UUID.randomUUID())
+                .userId(submission.getStudentId())
+                .message("Ваша работа «" + submission.getFileName() + "» проверена. Оценка: " + score + "/100")
+                .read(false)
+                .createdAt(Instant.now())
                 .build());
 
         return submissionRepository.updateStatus(submissionId, SubmissionStatus.GRADED);

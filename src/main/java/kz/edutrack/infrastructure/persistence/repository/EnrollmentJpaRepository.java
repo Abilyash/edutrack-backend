@@ -10,4 +10,5 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentJpaEnti
     boolean existsByStudentIdAndCourseId(UUID studentId, UUID courseId);
     void deleteByStudentIdAndCourseId(UUID studentId, UUID courseId);
     List<EnrollmentJpaEntity> findByStudentId(UUID studentId);
+    int countByCourseId(UUID courseId);
 }

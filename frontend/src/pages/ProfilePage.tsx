@@ -25,6 +25,9 @@ const ROLE_COLORS: Record<string, string> = {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     api.get('/users/me')
@@ -32,8 +35,23 @@ export default function ProfilePage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!nameInput.trim()) return
+    setSaving(true)
+    try {
+      const r = await api.patch('/users/me', { name: nameInput.trim() })
+      setUser(r.data)
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) return <Spinner />
   if (!user) return <p className="text-red-500">Ошибка загрузки профиля</p>
+
+  const initials = user.name?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()
 
   return (
     <div className="max-w-lg">
@@ -42,15 +60,36 @@ export default function ProfilePage() {
         <div className="bg-indigo-600 h-20" />
         <div className="px-6 pb-6">
           <div className="w-16 h-16 rounded-full bg-indigo-100 border-4 border-white flex items-center justify-center -mt-8 text-2xl font-bold text-indigo-600">
-            {user.name?.[0]?.toUpperCase() ?? user.email[0].toUpperCase()}
+            {initials}
           </div>
-          <div className="mt-3 flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-900">{user.name || '—'}</h3>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role] ?? 'bg-gray-100 text-gray-600'}`}>
-              {ROLE_LABELS[user.role] ?? user.role}
-            </span>
+          <div className="mt-3">
+            {editing ? (
+              <form onSubmit={handleSaveName} className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  className="border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400 flex-1"
+                  required
+                />
+                <button type="submit" disabled={saving}
+                  className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                  {saving ? '...' : 'Сохранить'}
+                </button>
+                <button type="button" onClick={() => setEditing(false)} className="text-sm text-gray-500">Отмена</button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900">{user.name || '—'}</h3>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {ROLE_LABELS[user.role] ?? user.role}
+                </span>
+                <button onClick={() => { setNameInput(user.name || ''); setEditing(true) }}
+                  className="text-gray-400 hover:text-indigo-500 text-sm" title="Изменить имя">✏</button>
+              </div>
+            )}
+            <p className="text-sm text-gray-500 mt-1">{user.email}</p>
           </div>
-          <p className="text-sm text-gray-500 mt-1">{user.email}</p>
 
           <div className="mt-5 border-t border-gray-100 pt-4 flex flex-col gap-3">
             <Row label="ID" value={user.id} mono />

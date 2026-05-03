@@ -35,16 +35,17 @@ public class UserService implements GetCurrentUserUseCase, SyncUserUseCase {
     public User syncFromJwt(UUID supabaseId, String email, Role role) {
         boolean isNew = !userRepository.existsById(supabaseId);
 
-        User user = userRepository.findById(supabaseId).orElseGet(() -> {
-            User newUser = User.builder()
-                    .id(supabaseId)
-                    .email(email)
-                    .name(extractNameFromEmail(email))
-                    .role(role)
-                    .createdAt(Instant.now())
-                    .build();
-            return userRepository.save(newUser);
-        });
+        User user = userRepository.findById(supabaseId)
+                .map(existing -> existing.getRole() == role
+                        ? existing
+                        : userRepository.save(existing.withRole(role)))
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .id(supabaseId)
+                        .email(email)
+                        .name(extractNameFromEmail(email))
+                        .role(role)
+                        .createdAt(Instant.now())
+                        .build()));
 
         AuditAction action = isNew ? AuditAction.USER_REGISTERED : AuditAction.USER_LOGIN;
         auditPublisher.publish(AuditLog.builder()

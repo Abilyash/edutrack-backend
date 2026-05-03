@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
+import { UserProvider } from './context/UserContext'
 import LoginPage from './pages/LoginPage'
 import CoursesPage from './pages/CoursesPage'
+import CoursePage from './pages/CoursePage'
+import ProfilePage from './pages/ProfilePage'
 import Layout from './components/Layout'
 
 export default function App() {
@@ -31,8 +34,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
-        <Route path="/" element={session ? <Layout /> : <Navigate to="/login" />}>
+        <Route path="/" element={session ? <UserProvider><Layout /></UserProvider> : <Navigate to="/login" />}>
           <Route index element={<CoursesPage />} />
+          <Route path="courses/:id" element={<CoursePage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

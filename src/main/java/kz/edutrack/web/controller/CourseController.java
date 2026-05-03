@@ -11,6 +11,9 @@ import kz.edutrack.domain.port.in.*;
 import kz.edutrack.web.request.CreateCourseRequest;
 import kz.edutrack.web.request.CreateModuleRequest;
 import kz.edutrack.web.request.CreateTopicRequest;
+import kz.edutrack.web.request.UpdateCourseRequest;
+import kz.edutrack.web.request.UpdateModuleRequest;
+import kz.edutrack.web.request.UpdateTopicRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -137,5 +140,32 @@ public class CourseController {
     @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public CourseDto unpublish(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return mapper.toDto(createCourse.togglePublish(id, false, UUID.fromString(jwt.getSubject())));
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public CourseDto updateCourse(@PathVariable UUID id,
+                                  @Valid @RequestBody UpdateCourseRequest req,
+                                  @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toDto(createCourse.updateCourse(id, req.title(), req.description(),
+                UUID.fromString(jwt.getSubject())));
+    }
+
+    @PatchMapping("/modules/{moduleId}")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public CourseModuleDto updateModule(@PathVariable UUID moduleId,
+                                        @Valid @RequestBody UpdateModuleRequest req,
+                                        @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toDto(addModule.updateModule(moduleId, req.title(),
+                UUID.fromString(jwt.getSubject())));
+    }
+
+    @PatchMapping("/topics/{topicId}")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public TopicDto updateTopic(@PathVariable UUID topicId,
+                                @Valid @RequestBody UpdateTopicRequest req,
+                                @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toDto(addModule.updateTopic(topicId, req.title(), req.content(),
+                UUID.fromString(jwt.getSubject())));
     }
 }

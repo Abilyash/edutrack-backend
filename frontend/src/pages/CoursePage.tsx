@@ -85,6 +85,16 @@ export default function CoursePage() {
   const [topicContent, setTopicContent] = useState('')
   const [topicLoading, setTopicLoading] = useState(false)
 
+  // Инлайн-редактирование
+  const [editingCourse, setEditingCourse] = useState(false)
+  const [editCourseTitle, setEditCourseTitle] = useState('')
+  const [editCourseDesc, setEditCourseDesc] = useState('')
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null)
+  const [editModuleTitle, setEditModuleTitle] = useState('')
+  const [editingTopicId, setEditingTopicId] = useState<string | null>(null)
+  const [editTopicTitle, setEditTopicTitle] = useState('')
+  const [editTopicContent, setEditTopicContent] = useState('')
+
   const loadCourse = () => {
     api.get(`/courses/${id}`)
       .then(r => setCourse(r.data))
@@ -116,7 +126,46 @@ export default function CoursePage() {
 
   const handleDeleteMaterial = async (topicId: string, materialId: string, fileName: string) => {
     if (!window.confirm(`Удалить файл «${fileName}»?`)) return
-    await api.delete(`/courses/topics/${topicId}/materials/${materialId}`)
+    try {
+      await api.delete(`/courses/topics/${topicId}/materials/${materialId}`)
+      setCourse(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          modules: prev.modules.map(m => ({
+            ...m,
+            topics: m.topics.map(t =>
+              t.id === topicId
+                ? { ...t, materials: t.materials.filter(mat => mat.id !== materialId) }
+                : t
+            )
+          }))
+        }
+      })
+    } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || 'Неизвестная ошибка'
+      alert(`Ошибка при удалении: ${detail}`)
+    }
+  }
+
+  const handleSaveCourse = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await api.patch(`/courses/${id}`, { title: editCourseTitle, description: editCourseDesc })
+    setEditingCourse(false)
+    loadCourse()
+  }
+
+  const handleSaveModule = async (e: React.FormEvent, moduleId: string) => {
+    e.preventDefault()
+    await api.patch(`/courses/modules/${moduleId}`, { title: editModuleTitle })
+    setEditingModuleId(null)
+    loadCourse()
+  }
+
+  const handleSaveTopic = async (e: React.FormEvent, topicId: string) => {
+    e.preventDefault()
+    await api.patch(`/courses/topics/${topicId}`, { title: editTopicTitle, content: editTopicContent })
+    setEditingTopicId(null)
     loadCourse()
   }
 
@@ -180,15 +229,46 @@ export default function CoursePage() {
       </Link>
 
       <div className="flex justify-between items-start mt-2 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-semibold text-gray-900">{course.title}</h2>
-            {course.published
-              ? <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Опубликован</span>
-              : <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-0.5 rounded-full">Черновик</span>
-            }
-          </div>
-          <p className="text-gray-500 mt-1">{course.description}</p>
+        <div className="flex-1 min-w-0 mr-4">
+          {editingCourse ? (
+            <form onSubmit={handleSaveCourse} className="flex flex-col gap-2 max-w-lg">
+              <input
+                autoFocus
+                value={editCourseTitle}
+                onChange={e => setEditCourseTitle(e.target.value)}
+                className="border border-indigo-300 rounded-lg px-3 py-1.5 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                required
+              />
+              <textarea
+                value={editCourseDesc}
+                onChange={e => setEditCourseDesc(e.target.value)}
+                rows={2}
+                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <div className="flex gap-2">
+                <button type="submit" className="bg-indigo-600 text-white text-sm px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
+                <button type="button" onClick={() => setEditingCourse(false)} className="text-sm text-gray-500">Отмена</button>
+              </div>
+            </form>
+          ) : (
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-semibold text-gray-900">{course.title}</h2>
+                {course.published
+                  ? <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Опубликован</span>
+                  : <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-0.5 rounded-full">Черновик</span>
+                }
+                {isOwner && (
+                  <button
+                    onClick={() => { setEditCourseTitle(course.title); setEditCourseDesc(course.description || ''); setEditingCourse(true) }}
+                    className="text-gray-400 hover:text-indigo-500 text-sm"
+                    title="Редактировать"
+                  >✏</button>
+                )}
+              </div>
+              <p className="text-gray-500 mt-1">{course.description}</p>
+            </div>
+          )}
         </div>
         {isTeacher && (
           <div className="flex gap-2 shrink-0 ml-4">
@@ -229,6 +309,28 @@ export default function CoursePage() {
           </div>
         )}
       </div>
+
+      {/* Прогресс студента */}
+      {isStudent && (() => {
+        const allTopics = course.modules.flatMap(m => m.topics)
+        const submitted = allTopics.filter(t => submissionsMap[t.id]).length
+        if (allTopics.length === 0) return null
+        const pct = Math.round((submitted / allTopics.length) * 100)
+        return (
+          <div className="mb-5 bg-white border border-gray-200 rounded-xl px-5 py-3 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-600 font-medium">Прогресс</span>
+              <span className="text-sm font-semibold text-indigo-600">{submitted} / {allTopics.length} тем сдано</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div
+                className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Форма добавления модуля */}
       {addingModule && (
@@ -271,14 +373,36 @@ export default function CoursePage() {
             <div key={m.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
               {/* Заголовок модуля */}
               <div className="flex items-center">
-                <button
-                  onClick={() => toggleModule(m.id)}
-                  className="flex-1 flex justify-between items-center px-5 py-4 text-left hover:bg-gray-50"
-                >
-                  <span className="font-medium text-gray-900">{m.title}</span>
-                  <span className="text-gray-400 text-sm">{openModules.has(m.id) ? '▲' : '▼'}</span>
-                </button>
-                {isTeacher && (
+                {editingModuleId === m.id ? (
+                  <form onSubmit={e => handleSaveModule(e, m.id)} className="flex-1 flex items-center gap-2 px-5 py-3">
+                    <input
+                      autoFocus
+                      value={editModuleTitle}
+                      onChange={e => setEditModuleTitle(e.target.value)}
+                      className="flex-1 border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      required
+                    />
+                    <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700">✓</button>
+                    <button type="button" onClick={() => setEditingModuleId(null)} className="text-xs text-gray-500">✕</button>
+                  </form>
+                ) : (
+                  <button
+                    onClick={() => toggleModule(m.id)}
+                    className="flex-1 flex justify-between items-center px-5 py-4 text-left hover:bg-gray-50"
+                  >
+                    <span className="font-medium text-gray-900 flex items-center gap-2">
+                      {m.title}
+                      {isOwner && (
+                        <span
+                          onClick={e => { e.stopPropagation(); setEditModuleTitle(m.title); setEditingModuleId(m.id) }}
+                          className="text-gray-300 hover:text-indigo-500 text-xs cursor-pointer"
+                        >✏</span>
+                      )}
+                    </span>
+                    <span className="text-gray-400 text-sm">{openModules.has(m.id) ? '▲' : '▼'}</span>
+                  </button>
+                )}
+                {isTeacher && editingModuleId !== m.id && (
                   <button
                     onClick={() => {
                       setAddingTopicFor(m.id)
@@ -297,8 +421,40 @@ export default function CoursePage() {
                   {m.topics.map(t => (
                     <div key={t.id} className="px-5 py-3 border-b border-gray-50 last:border-0 flex justify-between items-start">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">{t.title}</p>
-                        {t.content && <p className="text-sm text-gray-500 mt-1">{t.content}</p>}
+                        {editingTopicId === t.id ? (
+                          <form onSubmit={e => handleSaveTopic(e, t.id)} className="flex flex-col gap-2 max-w-lg">
+                            <input
+                              autoFocus
+                              value={editTopicTitle}
+                              onChange={e => setEditTopicTitle(e.target.value)}
+                              className="border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                              required
+                            />
+                            <textarea
+                              value={editTopicContent}
+                              onChange={e => setEditTopicContent(e.target.value)}
+                              rows={2}
+                              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            />
+                            <div className="flex gap-2">
+                              <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
+                              <button type="button" onClick={() => setEditingTopicId(null)} className="text-xs text-gray-500">Отмена</button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
+                              {t.title}
+                              {isOwner && (
+                                <span
+                                  onClick={() => { setEditTopicTitle(t.title); setEditTopicContent(t.content || ''); setEditingTopicId(t.id) }}
+                                  className="text-gray-300 hover:text-indigo-500 text-xs cursor-pointer"
+                                >✏</span>
+                              )}
+                            </p>
+                            {t.content && <p className="text-sm text-gray-500 mt-1">{t.content}</p>}
+                          </>
+                        )}
                         {t.materials?.length > 0 && (
                           <div className="mt-2 flex flex-col gap-1">
                             {t.materials.map(mat => (

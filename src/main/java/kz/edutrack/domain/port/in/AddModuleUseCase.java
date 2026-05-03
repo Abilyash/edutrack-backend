@@ -7,5 +7,7 @@ import java.util.UUID;
 
 public interface AddModuleUseCase {
     CourseModule addModule(UUID courseId, String title, UUID actorId);
+    CourseModule updateModule(UUID moduleId, String title, UUID actorId);
     Topic addTopic(UUID moduleId, String title, String content, UUID actorId);
+    Topic updateTopic(UUID topicId, String title, String content, UUID actorId);
 }

@@ -86,4 +86,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\CreateCours
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\CreateModuleRequest.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\CreateTopicRequest.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\GradeRequest.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\UpdateCourseRequest.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\UpdateModuleRequest.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\request\UpdateTopicRequest.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\response\UserResponse.java

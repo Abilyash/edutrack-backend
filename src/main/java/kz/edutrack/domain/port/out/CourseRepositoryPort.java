@@ -16,14 +16,17 @@ public interface CourseRepositoryPort {
     List<Course> findAllPublishedCourses();
     List<Course> findCoursesByTeacherId(UUID teacherId);
     Course updatePublished(UUID id, boolean published);
+    Course updateCourseDetails(UUID id, String title, String description);
 
     CourseModule saveModule(CourseModule module);
     CourseModule findModuleById(UUID moduleId);
     int countModulesByCourseId(UUID courseId);
+    CourseModule updateModuleTitle(UUID id, String title);
 
     Topic saveTopic(Topic topic);
     Topic findTopicById(UUID topicId);
     int countTopicsByModuleId(UUID moduleId);
+    Topic updateTopicDetails(UUID id, String title, String content);
 
     Material saveMaterial(Material material);
     Optional<Material> findMaterialById(UUID id);

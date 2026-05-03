@@ -10,9 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
 
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +32,7 @@ public class UserController {
      * При последующих — возвращает существующую.
      */
     @GetMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
         UserDto dto = mapper.toDto(getCurrentUser.getCurrentUser(id));
         return ResponseEntity.ok(new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()));

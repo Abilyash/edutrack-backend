@@ -110,6 +110,15 @@ public class CourseService implements
 
     @Override
     @Transactional
+    public Course updateCourse(UUID courseId, String title, String description, UUID actorId) {
+        Course course = courseRepository.findCourseById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+        requireOwner(course, actorId);
+        return courseRepository.updateCourseDetails(courseId, title, description);
+    }
+
+    @Override
+    @Transactional
     public Course togglePublish(UUID courseId, boolean published, UUID actorId) {
         Course course = courseRepository.findCourseById(courseId)
                 .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
@@ -157,6 +166,16 @@ public class CourseService implements
 
     @Override
     @Transactional
+    public CourseModule updateModule(UUID moduleId, String title, UUID actorId) {
+        CourseModule module = courseRepository.findModuleById(moduleId);
+        Course course = courseRepository.findCourseById(module.getCourseId())
+                .orElseThrow(() -> new IllegalStateException("Course not found"));
+        requireOwner(course, actorId);
+        return courseRepository.updateModuleTitle(moduleId, title);
+    }
+
+    @Override
+    @Transactional
     public Topic addTopic(UUID moduleId, String title, String content, UUID actorId) {
         CourseModule module = courseRepository.findModuleById(moduleId);
         Course course = courseRepository.findCourseById(module.getCourseId())
@@ -184,6 +203,17 @@ public class CourseService implements
                 .build());
 
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public Topic updateTopic(UUID topicId, String title, String content, UUID actorId) {
+        Topic topic = courseRepository.findTopicById(topicId);
+        CourseModule module = courseRepository.findModuleById(topic.getModuleId());
+        Course course = courseRepository.findCourseById(module.getCourseId())
+                .orElseThrow(() -> new IllegalStateException("Course not found"));
+        requireOwner(course, actorId);
+        return courseRepository.updateTopicDetails(topicId, title, content);
     }
 
     // ── UploadMaterialUseCase ──────────────────────────────────────────────

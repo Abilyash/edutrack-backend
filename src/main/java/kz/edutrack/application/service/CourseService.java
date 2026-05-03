@@ -3,6 +3,7 @@ package kz.edutrack.application.service;
 import kz.edutrack.domain.model.audit.AuditAction;
 import kz.edutrack.domain.model.audit.AuditLog;
 import kz.edutrack.domain.model.course.*;
+import org.springframework.security.access.AccessDeniedException;
 import kz.edutrack.domain.port.in.*;
 import kz.edutrack.domain.port.out.AuditEventPublisherPort;
 import kz.edutrack.domain.port.out.CourseRepositoryPort;
@@ -87,16 +88,26 @@ public class CourseService implements
     @Override
     @Transactional
     public Course togglePublish(UUID courseId, boolean published, UUID actorId) {
+        Course course = courseRepository.findCourseById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+        requireOwner(course, actorId);
         return courseRepository.updatePublished(courseId, published);
     }
 
     // ── AddModuleUseCase ───────────────────────────────────────────────────
 
+    private void requireOwner(Course course, UUID actorId) {
+        if (!course.getTeacherId().equals(actorId)) {
+            throw new AccessDeniedException("Only the course owner can modify it");
+        }
+    }
+
     @Override
     @Transactional
     public CourseModule addModule(UUID courseId, String title, UUID actorId) {
-        courseRepository.findCourseById(courseId)
+        Course course = courseRepository.findCourseById(courseId)
                 .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+        requireOwner(course, actorId);
 
         int order = courseRepository.countModulesByCourseId(courseId);
         CourseModule module = CourseModule.builder()
@@ -124,6 +135,10 @@ public class CourseService implements
     @Override
     @Transactional
     public Topic addTopic(UUID moduleId, String title, String content, UUID actorId) {
+        CourseModule module = courseRepository.findModuleById(moduleId);
+        Course course = courseRepository.findCourseById(module.getCourseId())
+                .orElseThrow(() -> new IllegalStateException("Course not found"));
+        requireOwner(course, actorId);
         int order = courseRepository.countTopicsByModuleId(moduleId);
         Topic topic = Topic.builder()
                 .id(UUID.randomUUID())
@@ -154,6 +169,11 @@ public class CourseService implements
     @Transactional
     public Material uploadMaterial(UUID topicId, String fileName, byte[] content,
                                    String contentType, UUID actorId) {
+        Topic topic = courseRepository.findTopicById(topicId);
+        CourseModule module = courseRepository.findModuleById(topic.getModuleId());
+        Course course = courseRepository.findCourseById(module.getCourseId())
+                .orElseThrow(() -> new IllegalStateException("Course not found"));
+        requireOwner(course, actorId);
         String safeName = UUID.randomUUID().toString().substring(0, 8)
                 + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
         String storagePath = "topics/" + topicId + "/" + safeName;

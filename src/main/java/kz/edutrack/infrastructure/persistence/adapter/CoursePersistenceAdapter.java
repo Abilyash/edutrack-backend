@@ -58,6 +58,20 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
     // ── Module ─────────────────────────────────────────────────────────────
 
     @Override
+    public CourseModule findModuleById(UUID moduleId) {
+        return moduleRepo.findById(moduleId)
+                .map(this::toDomain)
+                .orElseThrow(() -> new IllegalStateException("Module not found: " + moduleId));
+    }
+
+    @Override
+    public Topic findTopicById(UUID topicId) {
+        return topicRepo.findById(topicId)
+                .map(this::toDomain)
+                .orElseThrow(() -> new IllegalStateException("Topic not found: " + topicId));
+    }
+
+    @Override
     public CourseModule saveModule(CourseModule module) {
         CourseJpaEntity courseRef = courseRepo.getReferenceById(module.getCourseId());
         CourseModuleJpaEntity entity = CourseModuleJpaEntity.builder()

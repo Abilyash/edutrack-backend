@@ -18,9 +18,11 @@ public interface CourseRepositoryPort {
     Course updatePublished(UUID id, boolean published);
 
     CourseModule saveModule(CourseModule module);
+    CourseModule findModuleById(UUID moduleId);
     int countModulesByCourseId(UUID courseId);
 
     Topic saveTopic(Topic topic);
+    Topic findTopicById(UUID topicId);
     int countTopicsByModuleId(UUID moduleId);
 
     Material saveMaterial(Material material);

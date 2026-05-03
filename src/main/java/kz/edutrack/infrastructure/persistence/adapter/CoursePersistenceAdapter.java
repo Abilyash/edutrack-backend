@@ -38,6 +38,19 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
     }
 
     @Override
+    public List<Course> findAllPublishedCourses() {
+        return courseRepo.findAllPublishedWithModules().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public Course updatePublished(UUID id, boolean published) {
+        CourseJpaEntity e = courseRepo.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + id));
+        e.setPublished(published);
+        return toDomain(courseRepo.save(e));
+    }
+
+    @Override
     public List<Course> findCoursesByTeacherId(UUID teacherId) {
         return courseRepo.findAllByTeacherId(teacherId).stream().map(this::toDomain).toList();
     }

@@ -13,7 +13,9 @@ public interface CourseRepositoryPort {
     Course saveCourse(Course course);
     Optional<Course> findCourseById(UUID id);
     List<Course> findAllCourses();
+    List<Course> findAllPublishedCourses();
     List<Course> findCoursesByTeacherId(UUID teacherId);
+    Course updatePublished(UUID id, boolean published);
 
     CourseModule saveModule(CourseModule module);
     int countModulesByCourseId(UUID courseId);

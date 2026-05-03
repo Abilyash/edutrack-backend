@@ -13,4 +13,7 @@ public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, UUID
 
     @Query("SELECT DISTINCT c FROM CourseJpaEntity c LEFT JOIN FETCH c.modules")
     List<CourseJpaEntity> findAllWithModules();
+
+    @Query("SELECT DISTINCT c FROM CourseJpaEntity c LEFT JOIN FETCH c.modules WHERE c.published = true")
+    List<CourseJpaEntity> findAllPublishedWithModules();
 }

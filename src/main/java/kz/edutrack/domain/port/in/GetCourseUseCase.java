@@ -8,5 +8,6 @@ import java.util.UUID;
 public interface GetCourseUseCase {
     Course getCourseById(UUID id);
     List<Course> getAllCourses();
+    List<Course> getPublishedCourses();
     List<Course> getCoursesByTeacher(UUID teacherId);
 }

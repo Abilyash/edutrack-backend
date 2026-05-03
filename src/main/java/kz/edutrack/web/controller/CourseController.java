@@ -6,6 +6,7 @@ import kz.edutrack.application.dto.CourseModuleDto;
 import kz.edutrack.application.dto.MaterialDto;
 import kz.edutrack.application.dto.TopicDto;
 import kz.edutrack.application.mapper.CourseMapper;
+import kz.edutrack.domain.model.course.Course;
 import kz.edutrack.domain.port.in.*;
 import kz.edutrack.web.request.CreateCourseRequest;
 import kz.edutrack.web.request.CreateModuleRequest;
@@ -13,6 +14,8 @@ import kz.edutrack.web.request.CreateTopicRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,8 +39,14 @@ public class CourseController {
     private final CourseMapper mapper;
 
     @GetMapping
-    public List<CourseDto> listCourses() {
-        return getCourse.getAllCourses().stream().map(mapper::toDto).toList();
+    public List<CourseDto> listCourses(@AuthenticationPrincipal Jwt jwt) {
+        Map<String, Object> appMeta = jwt.getClaimAsMap("app_metadata");
+        String role = appMeta != null
+                ? String.valueOf(appMeta.getOrDefault("role", "STUDENT")).toUpperCase()
+                : "STUDENT";
+        boolean isTeacher = role.equals("TEACHER") || role.equals("ADMIN");
+        List<Course> courses = isTeacher ? getCourse.getAllCourses() : getCourse.getPublishedCourses();
+        return courses.stream().map(mapper::toDto).toList();
     }
 
     @GetMapping("/{id}")
@@ -100,5 +109,17 @@ public class CourseController {
     public List<CourseDto> myCourses(@AuthenticationPrincipal Jwt jwt) {
         UUID teacherId = UUID.fromString(jwt.getSubject());
         return getCourse.getCoursesByTeacher(teacherId).stream().map(mapper::toDto).toList();
+    }
+
+    @PatchMapping("/{id}/publish")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public CourseDto publish(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toDto(createCourse.togglePublish(id, true, UUID.fromString(jwt.getSubject())));
+    }
+
+    @PatchMapping("/{id}/unpublish")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public CourseDto unpublish(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return mapper.toDto(createCourse.togglePublish(id, false, UUID.fromString(jwt.getSubject())));
     }
 }

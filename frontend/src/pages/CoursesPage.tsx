@@ -79,9 +79,16 @@ export default function CoursesPage() {
                       {c.title[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
-                        {c.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                          {c.title}
+                        </h3>
+                        {!c.published && isTeacher && (
+                          <span className="shrink-0 bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded font-medium">
+                            Черновик
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                         {c.description || 'Нет описания'}
                       </p>

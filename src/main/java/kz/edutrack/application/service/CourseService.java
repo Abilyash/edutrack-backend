@@ -74,8 +74,20 @@ public class CourseService implements
 
     @Override
     @Transactional(readOnly = true)
+    public List<Course> getPublishedCourses() {
+        return courseRepository.findAllPublishedCourses();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Course> getCoursesByTeacher(UUID teacherId) {
         return courseRepository.findCoursesByTeacherId(teacherId);
+    }
+
+    @Override
+    @Transactional
+    public Course togglePublish(UUID courseId, boolean published, UUID actorId) {
+        return courseRepository.updatePublished(courseId, published);
     }
 
     // ── AddModuleUseCase ───────────────────────────────────────────────────

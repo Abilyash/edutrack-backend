@@ -61,6 +61,8 @@ export default function CoursePage() {
   const isStudent = user?.role === 'STUDENT'
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
+  const [publishLoading, setPublishLoading] = useState(false)
+  const isOwner = isTeacher && course?.teacherId === user?.id
   const [openModules, setOpenModules] = useState<Set<string>>(new Set())
 
   // Форма нового модуля
@@ -86,6 +88,18 @@ export default function CoursePage() {
     api.get(`/courses/${id}`)
       .then(r => setCourse(r.data))
       .finally(() => setLoading(false))
+  }
+
+  const handleTogglePublish = async () => {
+    if (!course) return
+    setPublishLoading(true)
+    try {
+      const endpoint = course.published ? `/courses/${id}/unpublish` : `/courses/${id}/publish`
+      const r = await api.patch(endpoint)
+      setCourse(prev => prev ? { ...prev, published: r.data.published } : prev)
+    } finally {
+      setPublishLoading(false)
+    }
   }
 
   const loadSubmissions = () => {
@@ -149,11 +163,30 @@ export default function CoursePage() {
 
       <div className="flex justify-between items-start mt-2 mb-6">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">{course.title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-semibold text-gray-900">{course.title}</h2>
+            {course.published
+              ? <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Опубликован</span>
+              : <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-0.5 rounded-full">Черновик</span>
+            }
+          </div>
           <p className="text-gray-500 mt-1">{course.description}</p>
         </div>
         {isTeacher && (
           <div className="flex gap-2 shrink-0 ml-4">
+            {isOwner && (
+              <button
+                onClick={handleTogglePublish}
+                disabled={publishLoading}
+                className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+                  course.published
+                    ? 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    : 'border-green-600 text-green-600 hover:bg-green-50'
+                }`}
+              >
+                {publishLoading ? '...' : course.published ? 'Снять' : 'Опубликовать'}
+              </button>
+            )}
             <button
               onClick={() => navigate(`/courses/${id}/journal`)}
               className="border border-indigo-600 text-indigo-600 text-sm px-4 py-2 rounded-lg hover:bg-indigo-50"

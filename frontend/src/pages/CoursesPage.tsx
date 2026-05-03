@@ -15,12 +15,22 @@ interface Course {
   modules: { id: string }[]
 }
 
-const PALETTE = [
-  'bg-indigo-500', 'bg-violet-500', 'bg-blue-500',
-  'bg-emerald-500', 'bg-orange-500', 'bg-pink-500',
+const GRADIENTS = [
+  'from-indigo-500 to-violet-600',
+  'from-blue-500 to-cyan-500',
+  'from-emerald-500 to-teal-600',
+  'from-orange-500 to-pink-500',
+  'from-pink-500 to-rose-500',
+  'from-violet-500 to-purple-600',
 ]
 
 type Tab = 'all' | 'my'
+
+function pluralModules(n: number) {
+  if (n === 1) return '1 модуль'
+  if (n >= 2 && n <= 4) return `${n} модуля`
+  return `${n} модулей`
+}
 
 export default function CoursesPage() {
   const { isTeacher, user } = useUser()
@@ -73,151 +83,168 @@ export default function CoursesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-7">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Курсы</h2>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isTeacher ? 'Мои курсы' : 'Курсы'}
+          </h1>
           <p className="text-sm text-gray-400 mt-0.5">
-            {isTeacher ? 'Управляйте своими курсами' : 'Ваши учебные материалы'}
+            {isTeacher ? 'Управляйте учебными материалами' : 'Все доступные курсы платформы'}
           </p>
         </div>
         {isTeacher && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 active:bg-indigo-800 transition-colors shadow-sm"
           >
-            + Создать курс
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            Создать курс
           </button>
         )}
       </div>
 
+      {/* Search */}
       <div className="relative mb-5">
-        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400 pointer-events-none">🔍</span>
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Поиск по названию или описанию..."
-          className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          className="w-full pl-9 pr-9 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition shadow-sm"
         />
         {search && (
           <button
             onClick={() => setSearch('')}
-            className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 text-lg"
-          >
-            ×
-          </button>
+            className="absolute inset-y-0 right-3 flex items-center text-gray-300 hover:text-gray-500 text-xl"
+          >×</button>
         )}
       </div>
 
+      {/* Tabs (student only) */}
       {isStudent && (
-        <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-lg w-fit">
-          <button
-            onClick={() => setTab('all')}
-            className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
-              tab === 'all' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Все курсы
-          </button>
-          <button
-            onClick={() => setTab('my')}
-            className={`text-sm px-4 py-1.5 rounded-md transition-colors ${
-              tab === 'my' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Мои курсы
-            {enrolledIds.size > 0 && (
-              <span className="ml-1.5 bg-indigo-100 text-indigo-600 text-xs px-1.5 py-0.5 rounded-full font-semibold">
-                {enrolledIds.size}
-              </span>
-            )}
-          </button>
+        <div className="flex gap-1 mb-5 bg-gray-100 p-1 rounded-xl w-fit">
+          {(['all', 'my'] as Tab[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`text-sm px-4 py-1.5 rounded-lg transition-all font-medium ${
+                tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t === 'all' ? 'Все курсы' : 'Мои курсы'}
+              {t === 'my' && enrolledIds.size > 0 && (
+                <span className="ml-1.5 bg-indigo-100 text-indigo-600 text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                  {enrolledIds.size}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       )}
 
+      {/* Empty state */}
       {displayed.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">{q ? '🔎' : tab === 'my' ? '🎓' : '📚'}</div>
-          <p className="text-gray-500 font-medium">
-            {q
-              ? `Ничего не найдено по запросу «${search}»`
-              : tab === 'my' ? 'Вы ещё не записались ни на один курс' : 'Курсов пока нет'}
+        <div className="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {q
+                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              }
+            </svg>
+          </div>
+          <p className="text-gray-700 font-semibold">
+            {q ? `Ничего не найдено` : tab === 'my' ? 'Вы не записались ни на один курс' : 'Курсов пока нет'}
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            {q ? `По запросу «${search}»` : tab === 'my' ? 'Запишитесь на курс из списка' : 'Создайте первый курс'}
           </p>
           {q && (
-            <button onClick={() => setSearch('')} className="mt-3 text-sm text-indigo-600 hover:underline">
+            <button onClick={() => setSearch('')} className="mt-4 text-sm text-indigo-600 hover:underline font-medium">
               Сбросить поиск
             </button>
           )}
           {!q && tab === 'my' && (
-            <button onClick={() => setTab('all')} className="mt-3 text-sm text-indigo-600 hover:underline">
+            <button onClick={() => setTab('all')} className="mt-4 text-sm text-indigo-600 hover:underline font-medium">
               Посмотреть все курсы →
             </button>
-          )}
-          {!q && tab === 'all' && isTeacher && (
-            <p className="text-gray-400 text-sm mt-1">Создайте первый курс, нажав кнопку выше</p>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {displayed.map((c, i) => {
             const enrolled = enrolledIds.has(c.id)
+            const grad = GRADIENTS[i % GRADIENTS.length]
             return (
-              <Link key={c.id} to={`/courses/${c.id}`} className="group">
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-indigo-200 transition-all h-full">
-                  <div className={`${PALETTE[i % PALETTE.length]} h-2`} />
-                  <div className="p-5">
+              <Link key={c.id} to={`/courses/${c.id}`} className="group block">
+                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-200 h-full flex flex-col">
+                  {/* Colored top strip */}
+                  <div className={`h-1.5 bg-gradient-to-r ${grad}`} />
+
+                  <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-start gap-3">
-                      <div className={`${PALETTE[i % PALETTE.length]} w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0`}>
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base shrink-0 shadow-sm`}>
                         {c.title[0]?.toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors truncate">
+                        <div className="flex items-start gap-2 flex-wrap">
+                          <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors leading-tight">
                             {c.title}
                           </h3>
                           {!c.published && isTeacher && (
-                            <span className="shrink-0 bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded font-medium">
+                            <span className="shrink-0 bg-amber-50 text-amber-600 text-xs px-2 py-0.5 rounded-full border border-amber-200 font-medium">
                               Черновик
                             </span>
                           )}
                           {enrolled && (
-                            <span className="shrink-0 bg-indigo-100 text-indigo-600 text-xs px-1.5 py-0.5 rounded font-medium">
+                            <span className="shrink-0 bg-indigo-50 text-indigo-600 text-xs px-2 py-0.5 rounded-full border border-indigo-200 font-medium">
                               Записан
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-sm text-gray-400 mt-1 line-clamp-2 leading-relaxed">
                           {c.description || 'Нет описания'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400">
-                          {new Date(c.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </span>
+                    <div className="flex items-center justify-between mt-auto pt-4">
+                      <div className="flex items-center gap-3 text-xs text-gray-400">
                         {c.modules?.length > 0 && (
-                          <span className="text-xs text-gray-400">
-                            📂 {c.modules.length} {c.modules.length === 1 ? 'модуль' : c.modules.length < 5 ? 'модуля' : 'модулей'}
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            {pluralModules(c.modules.length)}
                           </span>
                         )}
+                        <span>{new Date(c.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}</span>
                       </div>
+
                       {isStudent ? (
                         <button
                           onClick={e => handleEnroll(e, c.id)}
                           disabled={loadingEnroll === c.id}
-                          className={`text-xs px-3 py-1 rounded-lg border transition-colors disabled:opacity-50 ${
+                          className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all disabled:opacity-50 ${
                             enrolled
-                              ? 'border-gray-300 text-gray-500 hover:border-red-300 hover:text-red-500'
-                              : 'border-indigo-500 text-indigo-600 hover:bg-indigo-50'
+                              ? 'border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-500 hover:bg-red-50'
+                              : 'border-indigo-200 text-indigo-600 hover:bg-indigo-50 bg-indigo-50/50'
                           }`}
                         >
                           {loadingEnroll === c.id ? '...' : enrolled ? 'Отписаться' : 'Записаться'}
                         </button>
                       ) : (
-                        <span className="text-xs text-indigo-500 font-medium group-hover:translate-x-0.5 transition-transform">
-                          Открыть →
+                        <span className="text-xs text-indigo-400 font-medium group-hover:text-indigo-600 flex items-center gap-1 transition-colors">
+                          Открыть
+                          <svg className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                          </svg>
                         </span>
                       )}
                     </div>

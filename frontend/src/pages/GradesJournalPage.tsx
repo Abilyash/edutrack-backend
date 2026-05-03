@@ -43,6 +43,15 @@ interface Course {
   modules: Module[]
 }
 
+function ScorePill({ score }: { score: number }) {
+  const cls = score >= 80
+    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    : score >= 60
+    ? 'bg-amber-100 text-amber-700 border-amber-200'
+    : 'bg-red-100 text-red-600 border-red-200'
+  return <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${cls}`}>{score}/100</span>
+}
+
 export default function GradesJournalPage() {
   const { id } = useParams<{ id: string }>()
   const [course, setCourse] = useState<Course | null>(null)
@@ -69,7 +78,6 @@ export default function GradesJournalPage() {
             .catch(() => ({ ...t, submissions: [] }))
         )
       )
-
       setRows(results)
 
       const uniqueIds = [...new Set(results.flatMap(r => r.submissions.map(s => s.studentId)))]
@@ -97,88 +105,109 @@ export default function GradesJournalPage() {
 
   return (
     <div>
-      <Link to={`/courses/${id}`} className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
-        ← {course.title}
+      {/* Back link */}
+      <Link to={`/courses/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-600 transition-colors mb-5 group">
+        <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        {course.title}
       </Link>
 
-      <div className="flex justify-between items-start mt-2 mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Журнал успеваемости</h2>
-        <div className="flex gap-3">
-          <div className="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-xl">
-            Сдач: {totalSubmissions}
+      {/* Header + stats */}
+      <div className="flex justify-between items-start mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Журнал успеваемости</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Все работы студентов по курсу</p>
+        </div>
+      </div>
+
+      {/* Stats cards */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
+          <div className="text-2xl font-bold text-gray-900">{totalSubmissions}</div>
+          <div className="text-xs text-gray-400 mt-0.5">всего сдач</div>
+        </div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
+          <div className="text-2xl font-bold text-emerald-600">{gradedSubmissions}</div>
+          <div className="text-xs text-gray-400 mt-0.5">проверено</div>
+        </div>
+        <div className={`rounded-2xl p-4 shadow-sm text-center border ${avgScore !== null ? 'bg-gradient-to-br from-indigo-50 to-violet-50 border-indigo-100' : 'bg-white border-gray-100'}`}>
+          <div className={`text-2xl font-bold ${avgScore !== null ? 'text-indigo-600' : 'text-gray-300'}`}>
+            {avgScore !== null ? avgScore : '—'}
           </div>
-          <div className="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-xl">
-            Проверено: {gradedSubmissions}
-          </div>
-          {avgScore !== null && (
-            <div className="bg-indigo-50 text-indigo-700 text-sm font-semibold px-4 py-2 rounded-xl">
-              Средний балл: {avgScore}/100
-            </div>
-          )}
+          <div className="text-xs text-gray-400 mt-0.5">средний балл</div>
         </div>
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-gray-400">В курсе нет тем.</p>
+        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <p className="text-gray-400">В курсе нет тем</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-4">
           {rows.map(row => (
-            <div key={row.topicId} className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+            <div key={row.topicId} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">{row.moduleTitle}</p>
-                  <p className="font-medium text-gray-900 mt-0.5">{row.topicTitle}</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{row.moduleTitle}</p>
+                  <p className="font-semibold text-gray-900 mt-0.5">{row.topicTitle}</p>
                 </div>
-                <span className="text-xs text-gray-400">
+                <div className="text-xs text-gray-400 bg-white border border-gray-100 px-3 py-1 rounded-full">
                   {row.submissions.length === 0
                     ? 'Нет сдач'
                     : `${row.submissions.filter(s => s.grade).length} / ${row.submissions.length} проверено`}
-                </span>
+                </div>
               </div>
 
               {row.submissions.length === 0 ? (
-                <p className="text-sm text-gray-400 px-5 py-4">Никто ещё не сдал</p>
+                <p className="text-sm text-gray-300 text-center px-5 py-6">Никто ещё не сдал</p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs text-gray-400 border-b border-gray-100">
-                      <th className="text-left px-5 py-2 font-medium">Студент</th>
-                      <th className="text-left px-5 py-2 font-medium">Файл</th>
-                      <th className="text-left px-5 py-2 font-medium">Сдано</th>
-                      <th className="text-right px-5 py-2 font-medium">Оценка</th>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Студент</th>
+                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Файл</th>
+                      <th className="text-left px-5 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Дата</th>
+                      <th className="text-right px-5 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">Оценка</th>
                     </tr>
                   </thead>
                   <tbody>
                     {row.submissions.map(s => (
-                      <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                        <td className="px-5 py-3 text-gray-700 text-sm">
-                          {studentNames[s.studentId] ?? s.studentId.substring(0, 8) + '…'}
+                      <tr key={s.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                        <td className="px-5 py-3 text-gray-800 font-medium text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">
+                              {(studentNames[s.studentId] ?? '?')[0]?.toUpperCase()}
+                            </div>
+                            {studentNames[s.studentId] ?? s.studentId.substring(0, 8) + '…'}
+                          </div>
                         </td>
                         <td className="px-5 py-3">
                           <a
                             href={s.publicUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-indigo-600 hover:underline"
+                            className="text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-1.5 text-sm"
                           >
-                            📎 {s.fileName}
+                            <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span className="truncate max-w-[160px]">{s.fileName}</span>
                           </a>
                         </td>
-                        <td className="px-5 py-3 text-gray-400 text-xs">
-                          {new Date(s.submittedAt).toLocaleDateString('ru-RU')}
+                        <td className="px-5 py-3 text-gray-400 text-xs whitespace-nowrap">
+                          {new Date(s.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                         </td>
                         <td className="px-5 py-3 text-right">
                           {s.grade ? (
-                            <div className="flex flex-col items-end">
-                              <span className="bg-green-100 text-green-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                {s.grade.score}/100
-                              </span>
+                            <div className="flex flex-col items-end gap-1">
+                              <ScorePill score={s.grade.score} />
                               {s.grade.comment && (
-                                <span className="text-xs text-gray-400 mt-0.5 italic">"{s.grade.comment}"</span>
+                                <span className="text-xs text-gray-400 italic max-w-[160px] text-right">«{s.grade.comment}»</span>
                               )}
                             </div>
                           ) : (
-                            <span className="bg-yellow-100 text-yellow-700 text-xs px-2.5 py-0.5 rounded-full">
+                            <span className="bg-amber-50 text-amber-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">
                               Ожидает
                             </span>
                           )}

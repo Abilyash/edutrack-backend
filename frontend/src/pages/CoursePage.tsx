@@ -67,26 +67,20 @@ export default function CoursePage() {
   const isOwner = isTeacher && course?.teacherId === user?.id
   const [openModules, setOpenModules] = useState<Set<string>>(new Set())
 
-  // Форма нового модуля
   const [addingModule, setAddingModule] = useState(false)
   const [moduleTitle, setModuleTitle] = useState('')
   const [moduleLoading, setModuleLoading] = useState(false)
 
-  // Загрузка материала
   const [uploadingFor, setUploadingFor] = useState<Topic | null>(null)
-
-  // Сдача работы (студент) / просмотр сдач (учитель)
   const [submittingFor, setSubmittingFor] = useState<Topic | null>(null)
   const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState<Topic | null>(null)
   const [submissionsMap, setSubmissionsMap] = useState<Record<string, SubmissionDto>>({})
 
-  // Форма новой темы
   const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null)
   const [topicTitle, setTopicTitle] = useState('')
   const [topicContent, setTopicContent] = useState('')
   const [topicLoading, setTopicLoading] = useState(false)
 
-  // Инлайн-редактирование
   const [editingCourse, setEditingCourse] = useState(false)
   const [editCourseTitle, setEditCourseTitle] = useState('')
   const [editCourseDesc, setEditCourseDesc] = useState('')
@@ -144,8 +138,7 @@ export default function CoursePage() {
         }
       })
     } catch (err: any) {
-      const detail = err.response?.data?.detail || err.message || 'Неизвестная ошибка'
-      alert(`Ошибка при удалении: ${detail}`)
+      alert(`Ошибка: ${err.response?.data?.detail || err.message}`)
     }
   }
 
@@ -214,10 +207,7 @@ export default function CoursePage() {
     e.preventDefault()
     setTopicLoading(true)
     try {
-      await api.post(`/courses/modules/${moduleId}/topics`, {
-        title: topicTitle,
-        content: topicContent,
-      })
+      await api.post(`/courses/modules/${moduleId}/topics`, { title: topicTitle, content: topicContent })
       setTopicTitle('')
       setTopicContent('')
       setAddingTopicFor(null)
@@ -230,161 +220,182 @@ export default function CoursePage() {
   if (loading) return <Spinner />
   if (!course) return <p className="text-red-500">Курс не найден</p>
 
+  const allTopics = course.modules.flatMap(m => m.topics)
+  const submittedCount = allTopics.filter(t => submissionsMap[t.id]).length
+  const progressPct = allTopics.length > 0 ? Math.round((submittedCount / allTopics.length) * 100) : 0
+
   return (
     <div>
-      <Link to="/" className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
-        ← Все курсы
+      {/* Breadcrumb */}
+      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-600 transition-colors mb-5 group">
+        <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Все курсы
       </Link>
 
-      <div className="flex justify-between items-start mt-2 mb-6">
-        <div className="flex-1 min-w-0 mr-4">
-          {editingCourse ? (
-            <form onSubmit={handleSaveCourse} className="flex flex-col gap-2 max-w-lg">
-              <input
-                autoFocus
-                value={editCourseTitle}
-                onChange={e => setEditCourseTitle(e.target.value)}
-                className="border border-indigo-300 rounded-lg px-3 py-1.5 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                required
-              />
-              <textarea
-                value={editCourseDesc}
-                onChange={e => setEditCourseDesc(e.target.value)}
-                rows={2}
-                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-              <div className="flex gap-2">
-                <button type="submit" className="bg-indigo-600 text-white text-sm px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
-                <button type="button" onClick={() => setEditingCourse(false)} className="text-sm text-gray-500">Отмена</button>
-              </div>
-            </form>
-          ) : (
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold text-gray-900">{course.title}</h2>
-                {course.published
-                  ? <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">Опубликован</span>
-                  : <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-0.5 rounded-full">Черновик</span>
-                }
-                {isOwner && (
-                  <button
-                    onClick={() => { setEditCourseTitle(course.title); setEditCourseDesc(course.description || ''); setEditingCourse(true) }}
-                    className="text-gray-400 hover:text-indigo-500 text-sm"
-                    title="Редактировать"
-                  >✏</button>
-                )}
-              </div>
-              <p className="text-gray-500 mt-1">{course.description}</p>
-              {isTeacher && enrolledCount !== null && (
-                <p className="text-xs text-gray-400 mt-1.5">
-                  👥 {enrolledCount} {enrolledCount === 1 ? 'студент записан' : enrolledCount < 5 ? 'студента записано' : 'студентов записано'}
-                </p>
+      {/* Course header */}
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden mb-5">
+        <div className="h-1.5 bg-gradient-to-r from-indigo-500 to-violet-600" />
+        <div className="p-6">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1 min-w-0">
+              {editingCourse ? (
+                <form onSubmit={handleSaveCourse} className="flex flex-col gap-3 max-w-lg">
+                  <input
+                    autoFocus
+                    value={editCourseTitle}
+                    onChange={e => setEditCourseTitle(e.target.value)}
+                    className="border border-indigo-300 rounded-xl px-3 py-2 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    required
+                  />
+                  <textarea
+                    value={editCourseDesc}
+                    onChange={e => setEditCourseDesc(e.target.value)}
+                    rows={2}
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  />
+                  <div className="flex gap-2">
+                    <button type="submit" className="bg-indigo-600 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-indigo-700">Сохранить</button>
+                    <button type="button" onClick={() => setEditingCourse(false)} className="text-sm text-gray-500 px-2">Отмена</button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl font-bold text-gray-900">{course.title}</h1>
+                    {course.published
+                      ? <span className="bg-emerald-50 text-emerald-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">Опубликован</span>
+                      : <span className="bg-amber-50 text-amber-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">Черновик</span>
+                    }
+                    {isOwner && (
+                      <button
+                        onClick={() => { setEditCourseTitle(course.title); setEditCourseDesc(course.description || ''); setEditingCourse(true) }}
+                        className="text-gray-300 hover:text-indigo-500 transition-colors"
+                        title="Редактировать"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {course.description && (
+                    <p className="text-gray-500 text-sm mt-2 leading-relaxed">{course.description}</p>
+                  )}
+                  {isTeacher && enrolledCount !== null && (
+                    <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {enrolledCount} {enrolledCount === 1 ? 'студент' : enrolledCount < 5 ? 'студента' : 'студентов'} записано
+                    </div>
+                  )}
+                </>
               )}
+            </div>
+
+            {isTeacher && (
+              <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={handleTogglePublish}
+                      disabled={publishLoading}
+                      className={`text-sm px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 font-medium ${
+                        course.published
+                          ? 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                          : 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+                      }`}
+                    >
+                      {publishLoading ? '...' : course.published ? 'Снять с публикации' : 'Опубликовать'}
+                    </button>
+                    <button
+                      onClick={handleDeleteCourse}
+                      disabled={deleteLoading}
+                      className="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                    >
+                      {deleteLoading ? '...' : 'Удалить'}
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => navigate(`/courses/${id}/journal`)}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors font-medium"
+                >
+                  Журнал
+                </button>
+                <button
+                  onClick={() => setAddingModule(true)}
+                  className="bg-indigo-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                  + Модуль
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Student progress */}
+          {isStudent && allTopics.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Прогресс</span>
+                <span className="text-xs font-bold text-indigo-600">{submittedCount} / {allTopics.length} тем</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1.5">
+                <div
+                  className="bg-gradient-to-r from-indigo-500 to-violet-500 h-1.5 rounded-full transition-all duration-700"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-400">0%</span>
+                <span className="text-xs text-gray-400">{progressPct}%</span>
+              </div>
             </div>
           )}
         </div>
-        {isTeacher && (
-          <div className="flex gap-2 shrink-0 ml-4">
-            {isOwner && (
-              <>
-                <button
-                  onClick={handleTogglePublish}
-                  disabled={publishLoading}
-                  className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
-                    course.published
-                      ? 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                      : 'border-green-600 text-green-600 hover:bg-green-50'
-                  }`}
-                >
-                  {publishLoading ? '...' : course.published ? 'Снять' : 'Опубликовать'}
-                </button>
-                <button
-                  onClick={handleDeleteCourse}
-                  disabled={deleteLoading}
-                  className="text-sm px-4 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {deleteLoading ? '...' : 'Удалить курс'}
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => navigate(`/courses/${id}/journal`)}
-              className="border border-indigo-600 text-indigo-600 text-sm px-4 py-2 rounded-lg hover:bg-indigo-50"
-            >
-              Журнал
-            </button>
-            <button
-              onClick={() => setAddingModule(true)}
-              className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700"
-            >
-              + Модуль
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Прогресс студента */}
-      {isStudent && (() => {
-        const allTopics = course.modules.flatMap(m => m.topics)
-        const submitted = allTopics.filter(t => submissionsMap[t.id]).length
-        if (allTopics.length === 0) return null
-        const pct = Math.round((submitted / allTopics.length) * 100)
-        return (
-          <div className="mb-5 bg-white border border-gray-200 rounded-xl px-5 py-3 shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600 font-medium">Прогресс</span>
-              <span className="text-sm font-semibold text-indigo-600">{submitted} / {allTopics.length} тем сдано</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2">
-              <div
-                className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Форма добавления модуля */}
+      {/* Add module form */}
       {addingModule && (
-        <form onSubmit={handleAddModule} className="bg-white border border-indigo-200 rounded-xl p-4 mb-4 flex gap-3">
+        <form onSubmit={handleAddModule} className="bg-white border border-indigo-100 rounded-2xl p-4 mb-4 flex gap-3 shadow-sm">
           <input
             autoFocus
             type="text"
             value={moduleTitle}
             onChange={e => setModuleTitle(e.target.value)}
             placeholder="Название модуля"
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
           <button
             type="submit"
             disabled={moduleLoading}
-            className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            className="bg-indigo-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-indigo-700 disabled:opacity-50"
           >
             {moduleLoading ? '...' : 'Добавить'}
           </button>
-          <button
-            type="button"
-            onClick={() => setAddingModule(false)}
-            className="text-sm text-gray-500 px-3"
-          >
-            Отмена
-          </button>
+          <button type="button" onClick={() => setAddingModule(false)} className="text-sm text-gray-400 px-2">Отмена</button>
         </form>
       )}
 
+      {/* Modules list */}
       {course.modules.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">📂</div>
-          <p className="text-gray-500 font-medium">Модулей пока нет</p>
+        <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <p className="text-gray-600 font-semibold">Модулей пока нет</p>
           {isTeacher && <p className="text-gray-400 text-sm mt-1">Нажмите «+ Модуль» чтобы добавить первый</p>}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {course.modules.map(m => (
-            <div key={m.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-              {/* Заголовок модуля */}
+          {course.modules.map((m, mi) => (
+            <div key={m.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+              {/* Module header */}
               <div className="flex items-center">
                 {editingModuleId === m.id ? (
                   <form onSubmit={e => handleSaveModule(e, m.id)} className="flex-1 flex items-center gap-2 px-5 py-3">
@@ -395,171 +406,199 @@ export default function CoursePage() {
                       className="flex-1 border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400"
                       required
                     />
-                    <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-indigo-700">✓</button>
-                    <button type="button" onClick={() => setEditingModuleId(null)} className="text-xs text-gray-500">✕</button>
+                    <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg">✓</button>
+                    <button type="button" onClick={() => setEditingModuleId(null)} className="text-xs text-gray-400">✕</button>
                   </form>
                 ) : (
                   <button
                     onClick={() => toggleModule(m.id)}
-                    className="flex-1 flex justify-between items-center px-5 py-4 text-left hover:bg-gray-50"
+                    className="flex-1 flex justify-between items-center px-5 py-4 text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="font-medium text-gray-900 flex items-center gap-2">
-                      {m.title}
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">
+                        {mi + 1}
+                      </span>
+                      <span className="font-semibold text-gray-800">
+                        {m.title}
+                      </span>
+                      {m.topics.length > 0 && (
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                          {m.topics.length} тем
+                        </span>
+                      )}
                       {isOwner && (
                         <span
                           onClick={e => { e.stopPropagation(); setEditModuleTitle(m.title); setEditingModuleId(m.id) }}
-                          className="text-gray-300 hover:text-indigo-500 text-xs cursor-pointer"
-                        >✏</span>
+                          className="text-gray-300 hover:text-indigo-500 text-xs cursor-pointer transition-colors"
+                          title="Редактировать"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </span>
                       )}
-                    </span>
-                    <span className="text-gray-400 text-sm">{openModules.has(m.id) ? '▲' : '▼'}</span>
+                    </div>
+                    <svg
+                      className={`w-4 h-4 text-gray-400 transition-transform ${openModules.has(m.id) ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </button>
                 )}
                 {isTeacher && editingModuleId !== m.id && (
                   <button
-                    onClick={() => {
-                      setAddingTopicFor(m.id)
-                      setOpenModules(prev => new Set(prev).add(m.id))
-                    }}
-                    className="text-sm text-indigo-600 hover:text-indigo-800 px-4 py-4"
+                    onClick={() => { setAddingTopicFor(m.id); setOpenModules(prev => new Set(prev).add(m.id)) }}
+                    className="text-sm text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 transition-colors px-4 py-4 shrink-0"
                   >
                     + Тема
                   </button>
                 )}
               </div>
 
-              {/* Темы модуля */}
+              {/* Topics */}
               {openModules.has(m.id) && (
                 <div className="border-t border-gray-100">
-                  {m.topics.map(t => (
-                    <div key={t.id} className="px-5 py-3 border-b border-gray-50 last:border-0 flex justify-between items-start">
-                      <div className="flex-1">
-                        {editingTopicId === t.id ? (
-                          <form onSubmit={e => handleSaveTopic(e, t.id)} className="flex flex-col gap-2 max-w-lg">
-                            <input
-                              autoFocus
-                              value={editTopicTitle}
-                              onChange={e => setEditTopicTitle(e.target.value)}
-                              className="border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                              required
-                            />
-                            <textarea
-                              value={editTopicContent}
-                              onChange={e => setEditTopicContent(e.target.value)}
-                              rows={2}
-                              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                            />
-                            <div className="flex gap-2">
-                              <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
-                              <button type="button" onClick={() => setEditingTopicId(null)} className="text-xs text-gray-500">Отмена</button>
-                            </div>
-                          </form>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium text-gray-800 flex items-center gap-1.5">
-                              {t.title}
-                              {isOwner && (
-                                <span
-                                  onClick={() => { setEditTopicTitle(t.title); setEditTopicContent(t.content || ''); setEditingTopicId(t.id) }}
-                                  className="text-gray-300 hover:text-indigo-500 text-xs cursor-pointer"
-                                >✏</span>
-                              )}
-                            </p>
-                            {t.content && <p className="text-sm text-gray-500 mt-1">{t.content}</p>}
-                          </>
-                        )}
-                        {t.materials?.length > 0 && (
-                          <div className="mt-2 flex flex-col gap-1">
-                            {t.materials.map(mat => (
-                              <div key={mat.id} className="inline-flex items-center gap-1.5">
-                                <a
-                                  href={mat.publicUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-xs text-indigo-600 hover:underline"
-                                >
-                                  📎 {mat.fileName}
-                                  <span className="text-gray-400 ml-1">({(mat.sizeBytes / 1024).toFixed(1)} KB)</span>
-                                </a>
+                  {m.topics.map((t, ti) => (
+                    <div key={t.id} className="border-b border-gray-50 last:border-0">
+                      <div className="px-5 py-3.5 flex justify-between items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          {editingTopicId === t.id ? (
+                            <form onSubmit={e => handleSaveTopic(e, t.id)} className="flex flex-col gap-2 max-w-lg">
+                              <input
+                                autoFocus
+                                value={editTopicTitle}
+                                onChange={e => setEditTopicTitle(e.target.value)}
+                                className="border border-indigo-300 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                required
+                              />
+                              <textarea
+                                value={editTopicContent}
+                                onChange={e => setEditTopicContent(e.target.value)}
+                                rows={2}
+                                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                              />
+                              <div className="flex gap-2">
+                                <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
+                                <button type="button" onClick={() => setEditingTopicId(null)} className="text-xs text-gray-400">Отмена</button>
+                              </div>
+                            </form>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-300 font-mono w-5 shrink-0">{ti + 1}.</span>
+                                <p className="text-sm font-semibold text-gray-800 leading-snug">{t.title}</p>
                                 {isOwner && (
                                   <button
-                                    onClick={() => handleDeleteMaterial(t.id, mat.id, mat.fileName)}
-                                    className="text-gray-300 hover:text-red-500 text-xs leading-none"
-                                    title="Удалить файл"
+                                    onClick={() => { setEditTopicTitle(t.title); setEditTopicContent(t.content || ''); setEditingTopicId(t.id) }}
+                                    className="text-gray-300 hover:text-indigo-500 transition-colors shrink-0"
                                   >
-                                    ✕
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
                                   </button>
                                 )}
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-3 ml-4 shrink-0">
-                        {isTeacher && (
-                          <>
-                            <button
-                              onClick={() => setUploadingFor(t)}
-                              className="text-xs text-indigo-600 hover:text-indigo-800"
-                            >
-                              ↑ Файл
-                            </button>
-                            <button
-                              onClick={() => setViewingSubmissionsFor(t)}
-                              className="text-xs text-purple-600 hover:text-purple-800"
-                            >
-                              Сдачи
-                            </button>
-                          </>
-                        )}
-                        {isStudent && (() => {
-                          const sub = submissionsMap[t.id]
-                          if (!sub) return (
-                            <button
-                              onClick={() => setSubmittingFor(t)}
-                              className="text-xs text-green-600 hover:text-green-800"
-                            >
-                              Сдать работу
-                            </button>
-                          )
-                          if (sub.grade) return (
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                {sub.grade.score}/100
-                              </span>
-                              <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:underline">
-                                {sub.fileName}
-                              </a>
-                            </div>
-                          )
-                          return (
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                Сдано ✓
-                              </span>
-                              <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:underline">
-                                {sub.fileName}
-                              </a>
-                            </div>
-                          )
-                        })()}
+                              {t.content && <p className="text-sm text-gray-400 mt-1 ml-7 leading-relaxed">{t.content}</p>}
+                              {t.materials?.length > 0 && (
+                                <div className="mt-2 ml-7 flex flex-col gap-1">
+                                  {t.materials.map(mat => (
+                                    <div key={mat.id} className="inline-flex items-center gap-1.5 group/mat">
+                                      <a
+                                        href={mat.publicUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-1"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                        {mat.fileName}
+                                        <span className="text-gray-300">({(mat.sizeBytes / 1024).toFixed(0)} KB)</span>
+                                      </a>
+                                      {isOwner && (
+                                        <button
+                                          onClick={() => handleDeleteMaterial(t.id, mat.id, mat.fileName)}
+                                          className="opacity-0 group-hover/mat:opacity-100 text-gray-300 hover:text-red-500 transition-all"
+                                          title="Удалить"
+                                        >
+                                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isTeacher && (
+                            <>
+                              <button
+                                onClick={() => setUploadingFor(t)}
+                                className="text-xs text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors font-medium"
+                              >
+                                + Файл
+                              </button>
+                              <button
+                                onClick={() => setViewingSubmissionsFor(t)}
+                                className="text-xs text-violet-600 hover:text-violet-800 bg-violet-50 hover:bg-violet-100 px-2.5 py-1 rounded-lg transition-colors font-medium"
+                              >
+                                Сдачи
+                              </button>
+                            </>
+                          )}
+                          {isStudent && (() => {
+                            const sub = submissionsMap[t.id]
+                            if (!sub) return (
+                              <button
+                                onClick={() => setSubmittingFor(t)}
+                                className="text-xs text-white bg-emerald-500 hover:bg-emerald-600 px-2.5 py-1 rounded-lg transition-colors font-medium"
+                              >
+                                Сдать
+                              </button>
+                            )
+                            if (sub.grade) return (
+                              <div className="flex flex-col items-end gap-0.5">
+                                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
+                                  {sub.grade.score}/100
+                                </span>
+                                <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-300 hover:underline">
+                                  {sub.fileName}
+                                </a>
+                              </div>
+                            )
+                            return (
+                              <div className="flex flex-col items-end gap-0.5">
+                                <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                  Сдано ✓
+                                </span>
+                                <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-300 hover:underline">
+                                  {sub.fileName}
+                                </a>
+                              </div>
+                            )
+                          })()}
+                        </div>
                       </div>
                     </div>
                   ))}
 
-                  {/* Форма добавления темы */}
+                  {/* Add topic form */}
                   {addingTopicFor === m.id ? (
-                    <form
-                      onSubmit={e => handleAddTopic(e, m.id)}
-                      className="px-5 py-4 bg-gray-50 flex flex-col gap-2"
-                    >
+                    <form onSubmit={e => handleAddTopic(e, m.id)} className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex flex-col gap-2">
                       <input
                         autoFocus
                         type="text"
                         value={topicTitle}
                         onChange={e => setTopicTitle(e.target.value)}
                         placeholder="Название темы"
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                         required
                       />
                       <textarea
@@ -567,28 +606,19 @@ export default function CoursePage() {
                         onChange={e => setTopicContent(e.target.value)}
                         placeholder="Описание (необязательно)"
                         rows={2}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        className="border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       />
                       <div className="flex gap-2">
-                        <button
-                          type="submit"
-                          disabled={topicLoading}
-                          className="bg-indigo-600 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                        >
+                        <button type="submit" disabled={topicLoading}
+                          className="bg-indigo-600 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
                           {topicLoading ? '...' : 'Добавить'}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setAddingTopicFor(null)}
-                          className="text-sm text-gray-500"
-                        >
-                          Отмена
-                        </button>
+                        <button type="button" onClick={() => setAddingTopicFor(null)} className="text-sm text-gray-400">Отмена</button>
                       </div>
                     </form>
                   ) : (
                     m.topics.length === 0 && (
-                      <p className="text-gray-400 text-sm px-5 py-3">Тем нет</p>
+                      <p className="text-gray-300 text-sm px-5 py-4 text-center">Тем нет</p>
                     )
                   )}
                 </div>
@@ -597,28 +627,18 @@ export default function CoursePage() {
           ))}
         </div>
       )}
+
       {uploadingFor && (
-        <UploadMaterialModal
-          topicId={uploadingFor.id}
-          topicTitle={uploadingFor.title}
-          onClose={() => setUploadingFor(null)}
-          onUploaded={loadCourse}
-        />
+        <UploadMaterialModal topicId={uploadingFor.id} topicTitle={uploadingFor.title}
+          onClose={() => setUploadingFor(null)} onUploaded={loadCourse} />
       )}
       {submittingFor && (
-        <SubmitWorkModal
-          topicId={submittingFor.id}
-          topicTitle={submittingFor.title}
-          onClose={() => setSubmittingFor(null)}
-          onSubmitted={loadSubmissions}
-        />
+        <SubmitWorkModal topicId={submittingFor.id} topicTitle={submittingFor.title}
+          onClose={() => setSubmittingFor(null)} onSubmitted={loadSubmissions} />
       )}
       {viewingSubmissionsFor && (
-        <SubmissionsModal
-          topicId={viewingSubmissionsFor.id}
-          topicTitle={viewingSubmissionsFor.title}
-          onClose={() => setViewingSubmissionsFor(null)}
-        />
+        <SubmissionsModal topicId={viewingSubmissionsFor.id} topicTitle={viewingSubmissionsFor.title}
+          onClose={() => setViewingSubmissionsFor(null)} />
       )}
     </div>
   )

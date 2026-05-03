@@ -58,18 +58,25 @@ export default function Layout() {
   }, [])
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `text-sm transition-colors ${isActive
-      ? 'text-indigo-600 font-medium'
-      : 'text-gray-500 hover:text-gray-800'}`
+    `text-sm font-medium transition-colors px-3 py-1.5 rounded-lg ${
+      isActive
+        ? 'text-indigo-600 bg-indigo-50'
+        : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+    }`
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center sticky top-0 z-40">
-        <NavLink to="/" className="text-xl font-bold text-indigo-600 tracking-tight">
-          EduTrack
+    <div className="min-h-screen bg-slate-50">
+      <nav className="bg-white border-b border-gray-100 px-6 py-0 flex justify-between items-center sticky top-0 z-40 h-14 shadow-sm">
+        <NavLink to="/" className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <span className="text-base font-bold text-gray-900 tracking-tight">EduTrack</span>
         </NavLink>
 
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-1">
           {isStudent && (
             <NavLink to="/my-submissions" className={linkClass}>
               Мои сдачи
@@ -79,39 +86,51 @@ export default function Layout() {
             Профиль
           </NavLink>
 
-          {/* Колокольчик уведомлений */}
+          <div className="w-px h-5 bg-gray-200 mx-2" />
+
+          {/* Bell */}
           <div className="relative" ref={bellRef}>
-            <button onClick={openDropdown} className="relative text-gray-500 hover:text-indigo-600 transition-colors">
+            <button
+              onClick={openDropdown}
+              className="relative w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {unread > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold leading-none">
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
             </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50">
                   <span className="text-sm font-semibold text-gray-900">Уведомления</span>
                   {notifications.length > 0 && (
-                    <span className="text-xs text-gray-400">{notifications.length} шт.</span>
+                    <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">
+                      {notifications.length}
+                    </span>
                   )}
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-gray-400">
-                    <div className="text-3xl mb-2">🔔</div>
+                  <div className="px-4 py-10 text-center text-sm text-gray-400">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    </div>
                     Уведомлений нет
                   </div>
                 ) : (
                   <div className="max-h-72 overflow-y-auto">
                     {notifications.map(n => (
-                      <div key={n.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                        <p className="text-sm text-gray-800">{n.message}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                      <div key={n.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                        <p className="text-sm text-gray-800 leading-snug">{n.message}</p>
+                        <p className="text-xs text-gray-400 mt-1">
                           {new Date(n.createdAt).toLocaleString('ru-RU')}
                         </p>
                       </div>
@@ -122,14 +141,15 @@ export default function Layout() {
             )}
           </div>
 
-          <div className="w-px h-5 bg-gray-200" />
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold flex items-center justify-center">
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          <div className="flex items-center gap-2 pl-1">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 text-white text-xs font-semibold flex items-center justify-center shadow-sm">
               {initials}
             </div>
             <button
               onClick={() => supabase.auth.signOut()}
-              className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+              className="text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
             >
               Выйти
             </button>

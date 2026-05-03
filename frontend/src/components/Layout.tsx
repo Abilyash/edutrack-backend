@@ -1,12 +1,21 @@
 import { Outlet, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useUser } from '../context/UserContext'
 
 export default function Layout() {
+  const { user } = useUser()
+  const isStudent = user?.role === 'STUDENT'
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center">
         <Link to="/" className="text-xl font-semibold text-indigo-600">EduTrack</Link>
         <div className="flex items-center gap-4">
+          {isStudent && (
+            <Link to="/my-submissions" className="text-sm text-gray-500 hover:text-gray-700">
+              Мои сдачи
+            </Link>
+          )}
           <Link to="/profile" className="text-sm text-gray-500 hover:text-gray-700">Профиль</Link>
           <button
             onClick={() => supabase.auth.signOut()}

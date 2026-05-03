@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import api from '../lib/api'
 import { useUser } from '../context/UserContext'
 import UploadMaterialModal from '../components/UploadMaterialModal'
+import SubmitWorkModal from '../components/SubmitWorkModal'
+import SubmissionsModal from '../components/SubmissionsModal'
 
 interface Material {
   id: string
@@ -10,6 +12,20 @@ interface Material {
   publicUrl: string
   type: string
   sizeBytes: number
+}
+
+interface GradeDto {
+  score: number
+  comment: string | null
+}
+
+interface SubmissionDto {
+  id: string
+  topicId: string
+  fileName: string
+  publicUrl: string
+  status: string
+  grade: GradeDto | null
 }
 
 interface Topic {
@@ -39,7 +55,8 @@ interface Course {
 
 export default function CoursePage() {
   const { id } = useParams<{ id: string }>()
-  const { isTeacher } = useUser()
+  const { isTeacher, user } = useUser()
+  const isStudent = user?.role === 'STUDENT'
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [openModules, setOpenModules] = useState<Set<string>>(new Set())
@@ -51,6 +68,11 @@ export default function CoursePage() {
 
   // Загрузка материала
   const [uploadingFor, setUploadingFor] = useState<Topic | null>(null)
+
+  // Сдача работы (студент) / просмотр сдач (учитель)
+  const [submittingFor, setSubmittingFor] = useState<Topic | null>(null)
+  const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState<Topic | null>(null)
+  const [submissionsMap, setSubmissionsMap] = useState<Record<string, SubmissionDto>>({})
 
   // Форма новой темы
   const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null)
@@ -64,7 +86,17 @@ export default function CoursePage() {
       .finally(() => setLoading(false))
   }
 
+  const loadSubmissions = () => {
+    if (!isStudent) return
+    api.get('/submissions/my').then(r => {
+      const map: Record<string, SubmissionDto> = {}
+      for (const s of r.data as SubmissionDto[]) map[s.topicId] = s
+      setSubmissionsMap(map)
+    })
+  }
+
   useEffect(() => { loadCourse() }, [id])
+  useEffect(() => { loadSubmissions() }, [isStudent])
 
   const toggleModule = (moduleId: string) => {
     setOpenModules(prev => {
@@ -210,14 +242,55 @@ export default function CoursePage() {
                           </div>
                         )}
                       </div>
-                      {isTeacher && (
-                        <button
-                          onClick={() => setUploadingFor(t)}
-                          className="text-xs text-indigo-600 hover:text-indigo-800 ml-4 shrink-0"
-                        >
-                          ↑ Файл
-                        </button>
-                      )}
+                      <div className="flex gap-3 ml-4 shrink-0">
+                        {isTeacher && (
+                          <>
+                            <button
+                              onClick={() => setUploadingFor(t)}
+                              className="text-xs text-indigo-600 hover:text-indigo-800"
+                            >
+                              ↑ Файл
+                            </button>
+                            <button
+                              onClick={() => setViewingSubmissionsFor(t)}
+                              className="text-xs text-purple-600 hover:text-purple-800"
+                            >
+                              Сдачи
+                            </button>
+                          </>
+                        )}
+                        {isStudent && (() => {
+                          const sub = submissionsMap[t.id]
+                          if (!sub) return (
+                            <button
+                              onClick={() => setSubmittingFor(t)}
+                              className="text-xs text-green-600 hover:text-green-800"
+                            >
+                              Сдать работу
+                            </button>
+                          )
+                          if (sub.grade) return (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                {sub.grade.score}/100
+                              </span>
+                              <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:underline">
+                                {sub.fileName}
+                              </a>
+                            </div>
+                          )
+                          return (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                Сдано ✓
+                              </span>
+                              <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-400 hover:underline">
+                                {sub.fileName}
+                              </a>
+                            </div>
+                          )
+                        })()}
+                      </div>
                     </div>
                   ))}
 
@@ -277,6 +350,21 @@ export default function CoursePage() {
           topicTitle={uploadingFor.title}
           onClose={() => setUploadingFor(null)}
           onUploaded={loadCourse}
+        />
+      )}
+      {submittingFor && (
+        <SubmitWorkModal
+          topicId={submittingFor.id}
+          topicTitle={submittingFor.title}
+          onClose={() => setSubmittingFor(null)}
+          onSubmitted={loadSubmissions}
+        />
+      )}
+      {viewingSubmissionsFor && (
+        <SubmissionsModal
+          topicId={viewingSubmissionsFor.id}
+          topicTitle={viewingSubmissionsFor.title}
+          onClose={() => setViewingSubmissionsFor(null)}
         />
       )}
     </div>

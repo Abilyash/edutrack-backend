@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import CoursesPage from './pages/CoursesPage'
 import CoursePage from './pages/CoursePage'
 import ProfilePage from './pages/ProfilePage'
+import MySubmissionsPage from './pages/MySubmissionsPage'
 import Layout from './components/Layout'
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
           <Route index element={<CoursesPage />} />
           <Route path="courses/:id" element={<CoursePage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="my-submissions" element={<MySubmissionsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

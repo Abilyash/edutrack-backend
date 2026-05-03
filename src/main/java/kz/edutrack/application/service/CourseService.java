@@ -142,7 +142,9 @@ public class CourseService implements
     @Transactional
     public Material uploadMaterial(UUID topicId, String fileName, byte[] content,
                                    String contentType, UUID actorId) {
-        String storagePath = "topics/" + topicId + "/" + fileName;
+        String safeName = UUID.randomUUID().toString().substring(0, 8)
+                + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String storagePath = "topics/" + topicId + "/" + safeName;
         String publicUrl = materialStorage.upload(storagePath, content, contentType);
 
         Material material = Material.builder()

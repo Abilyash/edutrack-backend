@@ -4,6 +4,8 @@ import kz.edutrack.domain.model.audit.AuditAction;
 import kz.edutrack.domain.model.audit.AuditLog;
 import kz.edutrack.domain.model.course.*;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import kz.edutrack.domain.port.in.*;
 import kz.edutrack.domain.port.out.AuditEventPublisherPort;
 import kz.edutrack.domain.port.out.CourseRepositoryPort;
@@ -129,7 +131,10 @@ public class CourseService implements
     // ── AddModuleUseCase ───────────────────────────────────────────────────
 
     private void requireOwner(Course course, UUID actorId) {
-        if (!course.getTeacherId().equals(actorId)) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !course.getTeacherId().equals(actorId)) {
             throw new AccessDeniedException("Only the course owner can modify it");
         }
     }

@@ -6,7 +6,11 @@ import kz.edutrack.domain.model.submission.*;
 import kz.edutrack.domain.port.in.GradeSubmissionUseCase;
 import kz.edutrack.domain.port.in.SubmitWorkUseCase;
 import kz.edutrack.domain.model.notification.Notification;
+import kz.edutrack.domain.model.course.Course;
+import kz.edutrack.domain.model.course.CourseModule;
+import kz.edutrack.domain.model.course.Topic;
 import kz.edutrack.domain.port.out.AuditEventPublisherPort;
+import kz.edutrack.domain.port.out.CourseRepositoryPort;
 import kz.edutrack.domain.port.out.MaterialStoragePort;
 import kz.edutrack.domain.port.out.NotificationRepositoryPort;
 import kz.edutrack.domain.port.out.SubmissionRepositoryPort;
@@ -27,6 +31,7 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     private final MaterialStoragePort materialStorage;
     private final AuditEventPublisherPort auditPublisher;
     private final NotificationRepositoryPort notificationRepository;
+    private final CourseRepositoryPort courseRepository;
 
     @Override
     @Transactional
@@ -57,6 +62,19 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
                 .metadata(Map.of("topicId", topicId.toString(), "fileName", fileName))
                 .occurredAt(Instant.now())
                 .build());
+
+        try {
+            Topic topic = courseRepository.findTopicById(topicId);
+            CourseModule module = courseRepository.findModuleById(topic.getModuleId());
+            Course course = courseRepository.findCourseById(module.getCourseId()).orElseThrow();
+            notificationRepository.save(Notification.builder()
+                    .id(UUID.randomUUID())
+                    .userId(course.getTeacherId())
+                    .message("Студент сдал работу по теме «" + topic.getTitle() + "»: " + fileName)
+                    .read(false)
+                    .createdAt(Instant.now())
+                    .build());
+        } catch (Exception ignored) {}
 
         return saved;
     }

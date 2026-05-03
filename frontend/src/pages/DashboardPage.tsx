@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/courses'),
+      api.get('/courses/my'),
       api.get('/submissions/pending-count').catch(() => ({ data: { count: 0 } })),
     ]).then(([coursesRes, pendingRes]) => {
       const list: Course[] = coursesRes.data

@@ -5,6 +5,7 @@ import kz.edutrack.application.dto.SubmissionDto;
 import kz.edutrack.application.mapper.SubmissionMapper;
 import kz.edutrack.domain.port.in.GradeSubmissionUseCase;
 import kz.edutrack.domain.port.in.SubmitWorkUseCase;
+import kz.edutrack.infrastructure.persistence.repository.SubmissionJpaRepository;
 import kz.edutrack.web.request.GradeRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -27,6 +29,7 @@ public class SubmissionController {
     private final SubmitWorkUseCase submitWork;
     private final GradeSubmissionUseCase gradeSubmission;
     private final SubmissionMapper mapper;
+    private final SubmissionJpaRepository submissionRepo;
 
     @PostMapping(value = "/topics/{topicId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
@@ -60,6 +63,13 @@ public class SubmissionController {
                                  @AuthenticationPrincipal Jwt jwt) {
         UUID studentId = UUID.fromString(jwt.getSubject());
         gradeSubmission.deleteSubmission(submissionId, studentId);
+    }
+
+    @GetMapping("/pending-count")
+    @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
+    public Map<String, Integer> pendingCount(@AuthenticationPrincipal Jwt jwt) {
+        UUID teacherId = UUID.fromString(jwt.getSubject());
+        return Map.of("count", submissionRepo.countPendingByTeacherId(teacherId));
     }
 
     @PostMapping("/{submissionId}/grade")

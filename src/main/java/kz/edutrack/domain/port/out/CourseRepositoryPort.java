@@ -5,6 +5,7 @@ import kz.edutrack.domain.model.course.CourseModule;
 import kz.edutrack.domain.model.course.Material;
 import kz.edutrack.domain.model.course.Topic;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,7 +27,7 @@ public interface CourseRepositoryPort {
     Topic saveTopic(Topic topic);
     Topic findTopicById(UUID topicId);
     int countTopicsByModuleId(UUID moduleId);
-    Topic updateTopicDetails(UUID id, String title, String content);
+    Topic updateTopicDetails(UUID id, String title, String content, Instant deadline);
 
     Material saveMaterial(Material material);
     Optional<Material> findMaterialById(UUID id);

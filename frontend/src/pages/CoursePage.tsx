@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../lib/api'
 import { useUser } from '../context/UserContext'
+import { useToast } from '../context/ToastContext'
 import UploadMaterialModal from '../components/UploadMaterialModal'
 import SubmitWorkModal from '../components/SubmitWorkModal'
 import SubmissionsModal from '../components/SubmissionsModal'
@@ -34,6 +35,7 @@ interface Topic {
   title: string
   content: string
   orderIndex: number
+  deadline: string | null
   materials: Material[]
 }
 
@@ -54,10 +56,35 @@ interface Course {
   modules: Module[]
 }
 
+function DeadlineBadge({ deadline }: { deadline: string | null }) {
+  if (!deadline) return null
+  const d = new Date(deadline)
+  const now = new Date()
+  const diffMs = d.getTime() - now.getTime()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const label = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  if (diffMs < 0) return (
+    <span className="text-xs bg-red-50 text-red-500 border border-red-200 px-2 py-0.5 rounded-full font-medium">
+      Просрочено · {label}
+    </span>
+  )
+  if (diffDays <= 3) return (
+    <span className="text-xs bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+      {diffDays === 0 ? 'Сегодня' : `${diffDays} дн.`} · {label}
+    </span>
+  )
+  return (
+    <span className="text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
+      до {label}
+    </span>
+  )
+}
+
 export default function CoursePage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isTeacher, user } = useUser()
+  const { showToast } = useToast()
   const isStudent = user?.role === 'STUDENT'
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
@@ -79,6 +106,7 @@ export default function CoursePage() {
   const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null)
   const [topicTitle, setTopicTitle] = useState('')
   const [topicContent, setTopicContent] = useState('')
+  const [topicDeadline, setTopicDeadline] = useState('')
   const [topicLoading, setTopicLoading] = useState(false)
 
   const [editingCourse, setEditingCourse] = useState(false)
@@ -89,6 +117,7 @@ export default function CoursePage() {
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null)
   const [editTopicTitle, setEditTopicTitle] = useState('')
   const [editTopicContent, setEditTopicContent] = useState('')
+  const [editTopicDeadline, setEditTopicDeadline] = useState('')
 
   const loadCourse = () => {
     api.get(`/courses/${id}`)
@@ -138,7 +167,7 @@ export default function CoursePage() {
         }
       })
     } catch (err: any) {
-      alert(`Ошибка: ${err.response?.data?.detail || err.message}`)
+      showToast(`Ошибка: ${err.response?.data?.detail || err.message}`, 'error')
     }
   }
 
@@ -146,6 +175,7 @@ export default function CoursePage() {
     e.preventDefault()
     await api.patch(`/courses/${id}`, { title: editCourseTitle, description: editCourseDesc })
     setEditingCourse(false)
+    showToast('Курс обновлён')
     loadCourse()
   }
 
@@ -153,13 +183,16 @@ export default function CoursePage() {
     e.preventDefault()
     await api.patch(`/courses/modules/${moduleId}`, { title: editModuleTitle })
     setEditingModuleId(null)
+    showToast('Модуль обновлён')
     loadCourse()
   }
 
   const handleSaveTopic = async (e: React.FormEvent, topicId: string) => {
     e.preventDefault()
-    await api.patch(`/courses/topics/${topicId}`, { title: editTopicTitle, content: editTopicContent })
+    const deadline = editTopicDeadline ? new Date(editTopicDeadline).toISOString() : null
+    await api.patch(`/courses/topics/${topicId}`, { title: editTopicTitle, content: editTopicContent, deadline })
     setEditingTopicId(null)
+    showToast('Тема обновлена')
     loadCourse()
   }
 
@@ -207,9 +240,11 @@ export default function CoursePage() {
     e.preventDefault()
     setTopicLoading(true)
     try {
-      await api.post(`/courses/modules/${moduleId}/topics`, { title: topicTitle, content: topicContent })
+      const deadline = topicDeadline ? new Date(topicDeadline).toISOString() : null
+      await api.post(`/courses/modules/${moduleId}/topics`, { title: topicTitle, content: topicContent, deadline })
       setTopicTitle('')
       setTopicContent('')
+      setTopicDeadline('')
       setAddingTopicFor(null)
       loadCourse()
     } finally {
@@ -478,6 +513,15 @@ export default function CoursePage() {
                                 rows={2}
                                 className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
                               />
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs text-gray-500 shrink-0">Дедлайн:</label>
+                                <input
+                                  type="date"
+                                  value={editTopicDeadline}
+                                  onChange={e => setEditTopicDeadline(e.target.value)}
+                                  className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                />
+                              </div>
                               <div className="flex gap-2">
                                 <button type="submit" className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-lg hover:bg-indigo-700">Сохранить</button>
                                 <button type="button" onClick={() => setEditingTopicId(null)} className="text-xs text-gray-400">Отмена</button>
@@ -485,12 +529,18 @@ export default function CoursePage() {
                             </form>
                           ) : (
                             <>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-xs text-gray-300 font-mono w-5 shrink-0">{ti + 1}.</span>
                                 <p className="text-sm font-semibold text-gray-800 leading-snug">{t.title}</p>
+                                <DeadlineBadge deadline={t.deadline} />
                                 {isOwner && (
                                   <button
-                                    onClick={() => { setEditTopicTitle(t.title); setEditTopicContent(t.content || ''); setEditingTopicId(t.id) }}
+                                    onClick={() => {
+                                      setEditTopicTitle(t.title)
+                                      setEditTopicContent(t.content || '')
+                                      setEditTopicDeadline(t.deadline ? t.deadline.slice(0, 10) : '')
+                                      setEditingTopicId(t.id)
+                                    }}
                                     className="text-gray-300 hover:text-indigo-500 transition-colors shrink-0"
                                   >
                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -608,6 +658,15 @@ export default function CoursePage() {
                         rows={2}
                         className="border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       />
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-gray-500 shrink-0">Дедлайн:</label>
+                        <input
+                          type="date"
+                          value={topicDeadline}
+                          onChange={e => setTopicDeadline(e.target.value)}
+                          className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+                        />
+                      </div>
                       <div className="flex gap-2">
                         <button type="submit" disabled={topicLoading}
                           className="bg-indigo-600 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50">

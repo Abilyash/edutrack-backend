@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-03T18:56:10+0500",
+    date = "2026-05-04T03:05:55+0500",
     comments = "version: 1.6.3, compiler: javac, environment: Java 17.0.18 (Eclipse Adoptium)"
 )
 @Component
@@ -85,6 +85,7 @@ public class CourseMapperImpl implements CourseMapper {
         String title = null;
         String content = null;
         int orderIndex = 0;
+        Instant deadline = null;
         List<MaterialDto> materials = null;
 
         id = topic.getId();
@@ -92,9 +93,10 @@ public class CourseMapperImpl implements CourseMapper {
         title = topic.getTitle();
         content = topic.getContent();
         orderIndex = topic.getOrderIndex();
+        deadline = topic.getDeadline();
         materials = materialListToMaterialDtoList( topic.getMaterials() );
 
-        TopicDto topicDto = new TopicDto( id, moduleId, title, content, orderIndex, materials );
+        TopicDto topicDto = new TopicDto( id, moduleId, title, content, orderIndex, deadline, materials );
 
         return topicDto;
     }

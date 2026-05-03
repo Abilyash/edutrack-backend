@@ -68,11 +68,12 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
     }
 
     @Override
-    public Topic updateTopicDetails(UUID id, String title, String content) {
+    public Topic updateTopicDetails(UUID id, String title, String content, java.time.Instant deadline) {
         TopicJpaEntity e = topicRepo.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Topic not found: " + id));
         e.setTitle(title);
         e.setContent(content);
+        e.setDeadline(deadline);
         return toDomain(topicRepo.save(e));
     }
 
@@ -125,6 +126,7 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
                 .title(topic.getTitle())
                 .content(topic.getContent())
                 .orderIndex(topic.getOrderIndex())
+                .deadline(topic.getDeadline())
                 .build();
         return toDomain(topicRepo.save(entity));
     }
@@ -198,6 +200,7 @@ public class CoursePersistenceAdapter implements CourseRepositoryPort {
                 .title(e.getTitle())
                 .content(e.getContent())
                 .orderIndex(e.getOrderIndex())
+                .deadline(e.getDeadline())
                 .materials(e.getMaterials().stream().map(this::toDomain).toList())
                 .build();
     }

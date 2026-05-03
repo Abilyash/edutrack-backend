@@ -176,7 +176,7 @@ public class CourseService implements
 
     @Override
     @Transactional
-    public Topic addTopic(UUID moduleId, String title, String content, UUID actorId) {
+    public Topic addTopic(UUID moduleId, String title, String content, java.time.Instant deadline, UUID actorId) {
         CourseModule module = courseRepository.findModuleById(moduleId);
         Course course = courseRepository.findCourseById(module.getCourseId())
                 .orElseThrow(() -> new IllegalStateException("Course not found"));
@@ -187,6 +187,7 @@ public class CourseService implements
                 .moduleId(moduleId)
                 .title(title)
                 .content(content)
+                .deadline(deadline)
                 .orderIndex(order)
                 .materials(List.of())
                 .build();
@@ -207,13 +208,13 @@ public class CourseService implements
 
     @Override
     @Transactional
-    public Topic updateTopic(UUID topicId, String title, String content, UUID actorId) {
+    public Topic updateTopic(UUID topicId, String title, String content, java.time.Instant deadline, UUID actorId) {
         Topic topic = courseRepository.findTopicById(topicId);
         CourseModule module = courseRepository.findModuleById(topic.getModuleId());
         Course course = courseRepository.findCourseById(module.getCourseId())
                 .orElseThrow(() -> new IllegalStateException("Course not found"));
         requireOwner(course, actorId);
-        return courseRepository.updateTopicDetails(topicId, title, content);
+        return courseRepository.updateTopicDetails(topicId, title, content, deadline);
     }
 
     // ── UploadMaterialUseCase ──────────────────────────────────────────────

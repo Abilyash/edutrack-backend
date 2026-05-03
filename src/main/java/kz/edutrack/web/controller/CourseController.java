@@ -86,7 +86,7 @@ public class CourseController {
             @Valid @RequestBody CreateTopicRequest req,
             @AuthenticationPrincipal Jwt jwt) {
         UUID actorId = UUID.fromString(jwt.getSubject());
-        return mapper.toDto(addModule.addTopic(moduleId, req.title(), req.content(), actorId));
+        return mapper.toDto(addModule.addTopic(moduleId, req.title(), req.content(), req.deadline(), actorId));
     }
 
     @PostMapping(value = "/topics/{topicId}/materials",
@@ -165,7 +165,7 @@ public class CourseController {
     public TopicDto updateTopic(@PathVariable UUID topicId,
                                 @Valid @RequestBody UpdateTopicRequest req,
                                 @AuthenticationPrincipal Jwt jwt) {
-        return mapper.toDto(addModule.updateTopic(topicId, req.title(), req.content(),
+        return mapper.toDto(addModule.updateTopic(topicId, req.title(), req.content(), req.deadline(),
                 UUID.fromString(jwt.getSubject())));
     }
 }

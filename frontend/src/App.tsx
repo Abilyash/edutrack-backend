@@ -3,12 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import { UserProvider } from './context/UserContext'
+import { ToastProvider } from './context/ToastContext'
 import LoginPage from './pages/LoginPage'
 import CoursesPage from './pages/CoursesPage'
 import CoursePage from './pages/CoursePage'
 import ProfilePage from './pages/ProfilePage'
 import MySubmissionsPage from './pages/MySubmissionsPage'
 import GradesJournalPage from './pages/GradesJournalPage'
+import DashboardPage from './pages/DashboardPage'
 import Layout from './components/Layout'
 
 export default function App() {
@@ -28,22 +30,25 @@ export default function App() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="text-gray-500">Загрузка...</div>
+      <div className="w-6 h-6 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
     </div>
   )
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
-        <Route path="/" element={session ? <UserProvider><Layout /></UserProvider> : <Navigate to="/login" />}>
-          <Route index element={<CoursesPage />} />
-          <Route path="courses/:id" element={<CoursePage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="my-submissions" element={<MySubmissionsPage />} />
-          <Route path="courses/:id/journal" element={<GradesJournalPage />} />
-        </Route>
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/" element={session ? <UserProvider><Layout /></UserProvider> : <Navigate to="/login" />}>
+            <Route index element={<CoursesPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="courses/:id" element={<CoursePage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="my-submissions" element={<MySubmissionsPage />} />
+            <Route path="courses/:id/journal" element={<GradesJournalPage />} />
+          </Route>
+        </Routes>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

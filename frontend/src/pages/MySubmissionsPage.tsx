@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../lib/api'
 import Spinner from '../components/Spinner'
+import { useToast } from '../context/ToastContext'
 
 interface GradeDto {
   id: string
@@ -32,6 +33,7 @@ function ScoreBadge({ score }: { score: number }) {
 }
 
 export default function MySubmissionsPage() {
+  const { showToast } = useToast()
   const [submissions, setSubmissions] = useState<SubmissionDto[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -47,8 +49,9 @@ export default function MySubmissionsPage() {
     if (!window.confirm(`Удалить сдачу «${fileName}»?`)) return
     try {
       await api.delete(`/submissions/${id}`)
+      showToast('Сдача удалена')
     } catch (err: any) {
-      alert(`Ошибка: ${err.response?.data?.detail || err.message}`)
+      showToast(`Ошибка: ${err.response?.data?.detail || err.message}`, 'error')
     } finally {
       load()
     }

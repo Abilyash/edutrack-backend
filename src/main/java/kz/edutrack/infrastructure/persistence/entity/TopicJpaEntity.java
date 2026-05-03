@@ -3,6 +3,7 @@ package kz.edutrack.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +33,9 @@ public class TopicJpaEntity {
 
     @Column(name = "order_index", nullable = false)
     private int orderIndex;
+
+    @Column(name = "deadline")
+    private Instant deadline;
 
     @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default

@@ -14,6 +14,7 @@ interface Notification {
 export default function Layout() {
   const { user } = useUser()
   const isStudent = user?.role === 'STUDENT'
+  const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN'
   const initials = user?.name
     ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() ?? '?'
@@ -77,6 +78,11 @@ export default function Layout() {
         </NavLink>
 
         <div className="flex items-center gap-1">
+          {isTeacher && (
+            <NavLink to="/dashboard" className={linkClass}>
+              Дашборд
+            </NavLink>
+          )}
           {isStudent && (
             <NavLink to="/my-submissions" className={linkClass}>
               Мои сдачи

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import api from '../lib/api'
 import Spinner from '../components/Spinner'
+import { useToast } from '../context/ToastContext'
 
 interface GradeDto {
   score: number
@@ -54,13 +55,21 @@ function ScorePill({ score }: { score: number }) {
 
 export default function GradesJournalPage() {
   const { id } = useParams<{ id: string }>()
+  const { showToast } = useToast()
   const [course, setCourse] = useState<Course | null>(null)
   const [rows, setRows] = useState<TopicRow[]>([])
   const [studentNames, setStudentNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    api.get(`/courses/${id}`).then(async r => {
+  // grading modal state
+  const [gradingSubmission, setGradingSubmission] = useState<SubmissionDto | null>(null)
+  const [gradeScore, setGradeScore] = useState('')
+  const [gradeComment, setGradeComment] = useState('')
+  const [grading, setGrading] = useState(false)
+
+  const loadData = (courseId: string) => {
+    setLoading(true)
+    api.get(`/courses/${courseId}`).then(async r => {
       const c: Course = r.data
       setCourse(c)
 
@@ -91,7 +100,47 @@ export default function GradesJournalPage() {
       )
       setStudentNames(names)
     }).finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (id) loadData(id)
   }, [id])
+
+  const openGradeModal = (submission: SubmissionDto) => {
+    setGradingSubmission(submission)
+    setGradeScore(submission.grade ? String(submission.grade.score) : '')
+    setGradeComment(submission.grade?.comment ?? '')
+  }
+
+  const closeGradeModal = () => {
+    setGradingSubmission(null)
+    setGradeScore('')
+    setGradeComment('')
+  }
+
+  const handleGrade = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!gradingSubmission) return
+    const score = Number(gradeScore)
+    if (isNaN(score) || score < 0 || score > 100) {
+      showToast('Оценка должна быть от 0 до 100', 'error')
+      return
+    }
+    setGrading(true)
+    try {
+      await api.post(`/submissions/${gradingSubmission.id}/grade`, {
+        score,
+        comment: gradeComment.trim() || null,
+      })
+      showToast('Оценка выставлена')
+      closeGradeModal()
+      if (id) loadData(id)
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка при выставлении оценки', 'error')
+    } finally {
+      setGrading(false)
+    }
+  }
 
   if (loading) return <Spinner />
   if (!course) return <p className="text-red-500">Курс не найден</p>
@@ -105,7 +154,6 @@ export default function GradesJournalPage() {
 
   return (
     <div>
-      {/* Back link */}
       <Link to={`/courses/${id}`} className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-600 transition-colors mb-5 group">
         <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -113,7 +161,6 @@ export default function GradesJournalPage() {
         {course.title}
       </Link>
 
-      {/* Header + stats */}
       <div className="flex justify-between items-start mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Журнал успеваемости</h1>
@@ -121,7 +168,6 @@ export default function GradesJournalPage() {
         </div>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
           <div className="text-2xl font-bold text-gray-900">{totalSubmissions}</div>
@@ -201,15 +247,32 @@ export default function GradesJournalPage() {
                         <td className="px-5 py-3 text-right">
                           {s.grade ? (
                             <div className="flex flex-col items-end gap-1">
-                              <ScorePill score={s.grade.score} />
+                              <div className="flex items-center gap-2">
+                                <ScorePill score={s.grade.score} />
+                                <button
+                                  onClick={() => openGradeModal(s)}
+                                  className="text-gray-300 hover:text-indigo-500 transition-colors"
+                                  title="Изменить оценку"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              </div>
                               {s.grade.comment && (
                                 <span className="text-xs text-gray-400 italic max-w-[160px] text-right">«{s.grade.comment}»</span>
                               )}
                             </div>
                           ) : (
-                            <span className="bg-amber-50 text-amber-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-200">
-                              Ожидает
-                            </span>
+                            <button
+                              onClick={() => openGradeModal(s)}
+                              className="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                              </svg>
+                              Оценить
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -219,6 +282,75 @@ export default function GradesJournalPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Grade modal */}
+      {gradingSubmission && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-indigo-500 to-violet-600" />
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-5">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    {gradingSubmission.grade ? 'Изменить оценку' : 'Выставить оценку'}
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-0.5 truncate max-w-[220px]">
+                    {studentNames[gradingSubmission.studentId] ?? '…'} · {gradingSubmission.fileName}
+                  </p>
+                </div>
+                <button onClick={closeGradeModal} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleGrade} className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+                    Оценка (0–100)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    required
+                    value={gradeScore}
+                    onChange={e => setGradeScore(e.target.value)}
+                    placeholder="Например, 85"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+                    Комментарий <span className="text-gray-300 normal-case font-normal">(необязательно)</span>
+                  </label>
+                  <textarea
+                    value={gradeComment}
+                    onChange={e => setGradeComment(e.target.value)}
+                    placeholder="Замечания к работе..."
+                    rows={3}
+                    maxLength={1000}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-1">
+                  <button type="button" onClick={closeGradeModal}
+                    className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors">
+                    Отмена
+                  </button>
+                  <button type="submit" disabled={grading || !gradeScore}
+                    className="px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm">
+                    {grading ? 'Сохранение...' : 'Сохранить'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -113,15 +114,31 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
         Submission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new IllegalStateException("Submission not found: " + submissionId));
 
-        Grade grade = Grade.builder()
-                .id(UUID.randomUUID())
-                .submissionId(submissionId)
-                .teacherId(teacherId)
-                .score(score)
-                .comment(comment)
-                .gradedAt(Instant.now())
-                .build();
-        submissionRepository.saveGrade(grade);
+        Grade existing = submission.getGrade();
+        if (existing != null) {
+            long daysSince = ChronoUnit.DAYS.between(existing.getGradedAt(), Instant.now());
+            if (daysSince >= 3) {
+                throw new IllegalArgumentException(
+                        "Изменение оценки недоступно спустя 3 дня после выставления");
+            }
+            submissionRepository.updateGrade(Grade.builder()
+                    .id(existing.getId())
+                    .submissionId(submissionId)
+                    .teacherId(teacherId)
+                    .score(score)
+                    .comment(comment)
+                    .gradedAt(Instant.now())
+                    .build());
+        } else {
+            submissionRepository.saveGrade(Grade.builder()
+                    .id(UUID.randomUUID())
+                    .submissionId(submissionId)
+                    .teacherId(teacherId)
+                    .score(score)
+                    .comment(comment)
+                    .gradedAt(Instant.now())
+                    .build());
+        }
 
         auditPublisher.publish(AuditLog.builder()
                 .id(UUID.randomUUID())

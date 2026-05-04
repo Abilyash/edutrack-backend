@@ -82,6 +82,7 @@ C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\supabase
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\supabase\storage\SupabaseStorageAdapter.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\infrastructure\supabase\storage\SupabaseStorageConfig.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\advice\GlobalExceptionHandler.java
+C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\config\OpenApiConfig.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\AuditController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\CourseController.java
 C:\Users\user\Desktop\EduTrack\src\main\java\kz\edutrack\web\controller\EnrollmentController.java

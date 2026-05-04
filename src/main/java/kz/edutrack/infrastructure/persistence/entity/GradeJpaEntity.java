@@ -28,6 +28,6 @@ public class GradeJpaEntity {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    @Column(name = "graded_at", nullable = false, updatable = false)
+    @Column(name = "graded_at", nullable = false)
     private Instant gradedAt;
 }

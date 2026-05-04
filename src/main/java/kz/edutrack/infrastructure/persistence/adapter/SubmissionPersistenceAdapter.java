@@ -60,6 +60,17 @@ public class SubmissionPersistenceAdapter implements SubmissionRepositoryPort {
     }
 
     @Override
+    public Grade updateGrade(Grade g) {
+        GradeJpaEntity entity = gradeRepo.findById(g.getId())
+                .orElseThrow(() -> new IllegalStateException("Grade not found: " + g.getId()));
+        entity.setScore(g.getScore());
+        entity.setComment(g.getComment());
+        entity.setTeacherId(g.getTeacherId());
+        entity.setGradedAt(g.getGradedAt());
+        return toDomain(gradeRepo.save(entity));
+    }
+
+    @Override
     public void deleteById(UUID id) {
         submissionRepo.deleteById(id);
     }

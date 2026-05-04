@@ -84,6 +84,11 @@ export default function Layout() {
             </NavLink>
           )}
           {isStudent && (
+            <NavLink to="/my-courses" className={linkClass}>
+              Мои курсы
+            </NavLink>
+          )}
+          {isStudent && (
             <NavLink to="/my-submissions" className={linkClass}>
               Мои сдачи
             </NavLink>

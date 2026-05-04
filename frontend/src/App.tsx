@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage'
 import MySubmissionsPage from './pages/MySubmissionsPage'
 import GradesJournalPage from './pages/GradesJournalPage'
 import DashboardPage from './pages/DashboardPage'
+import MyCoursesPage from './pages/MyCoursesPage'
 import Layout from './components/Layout'
 
 export default function App() {
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="courses/:id" element={<CoursePage />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="my-courses" element={<MyCoursesPage />} />
             <Route path="my-submissions" element={<MySubmissionsPage />} />
             <Route path="courses/:id/journal" element={<GradesJournalPage />} />
           </Route>

@@ -1,5 +1,8 @@
 package kz.edutrack.application.service;
 
+import kz.edutrack.application.dto.GradeDto;
+import kz.edutrack.application.dto.SubmissionDto;
+import kz.edutrack.application.mapper.SubmissionMapper;
 import kz.edutrack.domain.model.audit.AuditAction;
 import kz.edutrack.domain.model.audit.AuditLog;
 import kz.edutrack.domain.model.submission.*;
@@ -33,6 +36,7 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     private final AuditEventPublisherPort auditPublisher;
     private final NotificationRepositoryPort notificationRepository;
     private final CourseRepositoryPort courseRepository;
+    private final SubmissionMapper submissionMapper;
 
     @Override
     @Transactional
@@ -41,10 +45,6 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
         if (topic.getDeadline() != null && Instant.now().isAfter(topic.getDeadline())) {
             throw new IllegalArgumentException("Срок сдачи по теме «" + topic.getTitle() + "» истёк");
         }
-        if (submissionRepository.existsByTopicIdAndStudentId(topicId, studentId)) {
-            throw new IllegalArgumentException("Вы уже сдали работу по этой теме");
-        }
-
         String safeName = UUID.randomUUID().toString().substring(0, 8)
                 + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
         String storagePath = "submissions/" + topicId + "/" + studentId + "/" + safeName;
@@ -97,6 +97,25 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     @Transactional(readOnly = true)
     public List<Submission> getMySubmissions(UUID studentId) {
         return submissionRepository.findByStudentId(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubmissionDto> getMySubmissionsEnriched(UUID studentId) {
+        return submissionRepository.findByStudentId(studentId).stream()
+            .map(s -> {
+                SubmissionDto base = submissionMapper.toDto(s);
+                String topicTitle = null;
+                java.time.Instant deadline = null;
+                try {
+                    Topic topic = courseRepository.findTopicById(s.getTopicId());
+                    topicTitle = topic.getTitle();
+                    deadline = topic.getDeadline();
+                } catch (Exception ignored) {}
+                return new SubmissionDto(base.id(), base.topicId(), base.studentId(),
+                    base.fileName(), base.publicUrl(), base.status(),
+                    base.submittedAt(), base.grade(), topicTitle, deadline);
+            })
+            .toList();
     }
 
     @Override

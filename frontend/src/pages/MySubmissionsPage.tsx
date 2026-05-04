@@ -19,6 +19,8 @@ interface SubmissionDto {
   status: string
   submittedAt: string
   grade: GradeDto | null
+  topicTitle: string | null
+  deadline: string | null
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -32,10 +34,35 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
+type SortKey = 'date-desc' | 'date-asc' | 'status' | 'grade'
+
+function DeadlineBadge({ deadline }: { deadline: string | null }) {
+  if (!deadline) return null
+  const d = new Date(deadline)
+  const diffMs = d.getTime() - Date.now()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  if (diffMs < 0) return (
+    <span className="text-xs bg-red-50 text-red-500 border border-red-200 px-2 py-0.5 rounded-full">
+      Просрочено
+    </span>
+  )
+  if (diffDays <= 3) return (
+    <span className="text-xs bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">
+      {diffDays === 0 ? 'Сегодня' : `${diffDays} дн.`}
+    </span>
+  )
+  return (
+    <span className="text-xs bg-gray-50 text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full">
+      до {d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+    </span>
+  )
+}
+
 export default function MySubmissionsPage() {
   const { showToast } = useToast()
   const [submissions, setSubmissions] = useState<SubmissionDto[]>([])
   const [loading, setLoading] = useState(true)
+  const [sort, setSort] = useState<SortKey>('date-desc')
 
   const load = () => {
     api.get('/submissions/my')
@@ -64,6 +91,14 @@ export default function MySubmissionsPage() {
     ? Math.round(graded.reduce((sum, s) => sum + s.grade!.score, 0) / graded.length)
     : null
 
+  const sorted = [...submissions].sort((a, b) => {
+    if (sort === 'date-asc') return new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime()
+    if (sort === 'date-desc') return new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    if (sort === 'status') return (a.grade ? 1 : 0) - (b.grade ? 1 : 0)
+    if (sort === 'grade') return (b.grade?.score ?? -1) - (a.grade?.score ?? -1)
+    return 0
+  })
+
   return (
     <div>
       {/* Header */}
@@ -71,6 +106,19 @@ export default function MySubmissionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Мои сдачи</h1>
           <p className="text-sm text-gray-400 mt-0.5">Все отправленные работы</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">Сортировка:</span>
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value as SortKey)}
+            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white text-gray-600"
+          >
+            <option value="date-desc">Новые первые</option>
+            <option value="date-asc">Старые первые</option>
+            <option value="status">На проверке первые</option>
+            <option value="grade">По оценке</option>
+          </select>
         </div>
         {avg !== null && (
           <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 px-5 py-3 rounded-2xl text-center">
@@ -110,7 +158,7 @@ export default function MySubmissionsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {submissions.map(s => (
+          {sorted.map(s => (
             <div
               key={s.id}
               className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden hover:border-indigo-100 transition-colors"
@@ -118,6 +166,12 @@ export default function MySubmissionsPage() {
               <div className={`h-1 ${s.grade ? (s.grade.score >= 80 ? 'bg-emerald-400' : s.grade.score >= 60 ? 'bg-amber-400' : 'bg-red-400') : 'bg-gray-200'}`} />
               <div className="p-4 flex justify-between items-start gap-4">
                 <div className="flex-1 min-w-0">
+                  {s.topicTitle && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-semibold text-gray-700">{s.topicTitle}</span>
+                      {!s.grade && <DeadlineBadge deadline={s.deadline} />}
+                    </div>
+                  )}
                   <a
                     href={s.publicUrl}
                     target="_blank"

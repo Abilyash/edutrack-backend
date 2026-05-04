@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -61,6 +62,24 @@ public class UserController {
         return ResponseEntity.ok(new UserResponse(
                 dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()
         ));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserResponse>> listAll() {
+        return ResponseEntity.ok(
+            userService.listAll().stream()
+                .map(u -> { UserDto dto = mapper.toDto(u); return new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()); })
+                .toList()
+        );
+    }
+
+    @PatchMapping("/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> changeRole(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+        Role role = Role.valueOf(body.get("role").toUpperCase());
+        UserDto dto = mapper.toDto(userService.changeRole(id, role));
+        return ResponseEntity.ok(new UserResponse(dto.id(), dto.email(), dto.name(), dto.role(), dto.createdAt()));
     }
 
     private Role extractRole(Jwt jwt) {

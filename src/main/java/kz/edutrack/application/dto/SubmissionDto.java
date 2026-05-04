@@ -11,5 +11,7 @@ public record SubmissionDto(
         String publicUrl,
         String status,
         Instant submittedAt,
-        GradeDto grade
+        GradeDto grade,
+        String topicTitle,
+        Instant deadline
 ) {}

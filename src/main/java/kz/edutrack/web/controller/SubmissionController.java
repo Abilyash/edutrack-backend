@@ -51,6 +51,7 @@ public class SubmissionController {
     private final GradeSubmissionUseCase gradeSubmission;
     private final SubmissionMapper mapper;
     private final SubmissionJpaRepository submissionRepo;
+    private final kz.edutrack.application.service.SubmissionService submissionService;
 
     @PostMapping(value = "/topics/{topicId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
@@ -85,7 +86,7 @@ public class SubmissionController {
     @PreAuthorize("hasRole('STUDENT')")
     public List<SubmissionDto> mySubmissions(@AuthenticationPrincipal Jwt jwt) {
         UUID studentId = UUID.fromString(jwt.getSubject());
-        return gradeSubmission.getMySubmissions(studentId).stream().map(mapper::toDto).toList();
+        return submissionService.getMySubmissionsEnriched(studentId);
     }
 
     @DeleteMapping("/{submissionId}")

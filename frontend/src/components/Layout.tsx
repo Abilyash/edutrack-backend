@@ -83,6 +83,11 @@ export default function Layout() {
               Дашборд
             </NavLink>
           )}
+          {user?.role === 'ADMIN' && (
+            <NavLink to="/admin" className={linkClass}>
+              Пользователи
+            </NavLink>
+          )}
           {isStudent && (
             <NavLink to="/my-courses" className={linkClass}>
               Мои курсы

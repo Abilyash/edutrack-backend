@@ -12,6 +12,7 @@ import MySubmissionsPage from './pages/MySubmissionsPage'
 import GradesJournalPage from './pages/GradesJournalPage'
 import DashboardPage from './pages/DashboardPage'
 import MyCoursesPage from './pages/MyCoursesPage'
+import AdminPage from './pages/AdminPage'
 import NotFoundPage from './pages/NotFoundPage'
 import RoleRoute from './components/RoleRoute'
 import Layout from './components/Layout'
@@ -57,6 +58,9 @@ export default function App() {
             } />
             <Route path="courses/:id/journal" element={
               <RoleRoute allow={['TEACHER', 'ADMIN']}><GradesJournalPage /></RoleRoute>
+            } />
+            <Route path="admin" element={
+              <RoleRoute allow={['ADMIN']}><AdminPage /></RoleRoute>
             } />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

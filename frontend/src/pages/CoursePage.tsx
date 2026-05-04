@@ -101,7 +101,7 @@ export default function CoursePage() {
   const [uploadingFor, setUploadingFor] = useState<Topic | null>(null)
   const [submittingFor, setSubmittingFor] = useState<Topic | null>(null)
   const [viewingSubmissionsFor, setViewingSubmissionsFor] = useState<Topic | null>(null)
-  const [submissionsMap, setSubmissionsMap] = useState<Record<string, SubmissionDto>>({})
+  const [submissionsMap, setSubmissionsMap] = useState<Record<string, SubmissionDto[]>>({})
 
   const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null)
   const [topicTitle, setTopicTitle] = useState('')
@@ -199,10 +199,23 @@ export default function CoursePage() {
   const loadSubmissions = () => {
     if (!isStudent) return
     api.get('/submissions/my').then(r => {
-      const map: Record<string, SubmissionDto> = {}
-      for (const s of r.data as SubmissionDto[]) map[s.topicId] = s
+      const map: Record<string, SubmissionDto[]> = {}
+      for (const s of r.data as SubmissionDto[]) {
+        map[s.topicId] = [...(map[s.topicId] ?? []), s]
+      }
       setSubmissionsMap(map)
     })
+  }
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    if (!window.confirm('Удалить эту сдачу?')) return
+    try {
+      await api.delete(`/submissions/${submissionId}`)
+      showToast('Сдача удалена')
+      loadSubmissions()
+    } catch (err: any) {
+      showToast(err.response?.data?.detail || 'Ошибка при удалении', 'error')
+    }
   }
 
   useEffect(() => { loadCourse() }, [id])
@@ -256,7 +269,7 @@ export default function CoursePage() {
   if (!course) return <p className="text-red-500">Курс не найден</p>
 
   const allTopics = course.modules.flatMap(m => m.topics)
-  const submittedCount = allTopics.filter(t => submissionsMap[t.id]).length
+  const submittedCount = allTopics.filter(t => (submissionsMap[t.id]?.length ?? 0) > 0).length
   const progressPct = allTopics.length > 0 ? Math.round((submittedCount / allTopics.length) * 100) : 0
 
   return (
@@ -604,33 +617,47 @@ export default function CoursePage() {
                             </>
                           )}
                           {isStudent && (() => {
-                            const sub = submissionsMap[t.id]
-                            if (!sub) return (
-                              <button
-                                onClick={() => setSubmittingFor(t)}
-                                className="text-xs text-white bg-emerald-500 hover:bg-emerald-600 px-2.5 py-1 rounded-lg transition-colors font-medium"
-                              >
-                                Сдать
-                              </button>
-                            )
-                            if (sub.grade) return (
-                              <div className="flex flex-col items-end gap-0.5">
-                                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                                  {sub.grade.score}/100
-                                </span>
-                                <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-300 hover:underline">
-                                  {sub.fileName}
-                                </a>
-                              </div>
-                            )
+                            const subs = submissionsMap[t.id] ?? []
+                            const hasGrade = subs.some(s => s.grade)
                             return (
-                              <div className="flex flex-col items-end gap-0.5">
-                                <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
-                                  Сдано ✓
-                                </span>
-                                <a href={sub.publicUrl} target="_blank" rel="noreferrer" className="text-xs text-gray-300 hover:underline">
-                                  {sub.fileName}
-                                </a>
+                              <div className="flex flex-col items-end gap-1.5 max-w-[200px]">
+                                {subs.map(sub => (
+                                  <div key={sub.id} className="flex items-center gap-1 group/sub">
+                                    {sub.grade ? (
+                                      <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full shrink-0">
+                                        {sub.grade.score}/100
+                                      </span>
+                                    ) : (
+                                      <span className="bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full shrink-0">
+                                        ✓
+                                      </span>
+                                    )}
+                                    <a href={sub.publicUrl} target="_blank" rel="noreferrer"
+                                      className="text-xs text-gray-400 hover:text-indigo-500 hover:underline truncate max-w-[100px]"
+                                      title={sub.fileName}>
+                                      {sub.fileName}
+                                    </a>
+                                    {!sub.grade && (
+                                      <button
+                                        onClick={() => handleDeleteSubmission(sub.id)}
+                                        className="opacity-0 group-hover/sub:opacity-100 text-gray-300 hover:text-red-500 transition-all shrink-0"
+                                        title="Удалить"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                {!hasGrade && (
+                                  <button
+                                    onClick={() => setSubmittingFor(t)}
+                                    className="text-xs text-white bg-emerald-500 hover:bg-emerald-600 px-2.5 py-1 rounded-lg transition-colors font-medium"
+                                  >
+                                    {subs.length === 0 ? 'Сдать' : '+ Файл'}
+                                  </button>
+                                )}
                               </div>
                             )
                           })()}

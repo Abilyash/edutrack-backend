@@ -1,6 +1,7 @@
 package kz.edutrack.infrastructure.persistence.adapter;
 
 import kz.edutrack.application.mapper.UserMapper;
+import kz.edutrack.domain.model.user.Role;
 import kz.edutrack.domain.model.user.User;
 import kz.edutrack.domain.port.out.UserRepositoryPort;
 import kz.edutrack.infrastructure.persistence.entity.UserJpaEntity;
@@ -8,6 +9,7 @@ import kz.edutrack.infrastructure.persistence.repository.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +40,19 @@ public class UserPersistenceAdapter implements UserRepositoryPort {
         UserJpaEntity e = jpaRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("User not found: " + id));
         e.setName(name);
+        return mapper.toDomain(jpaRepository.save(e));
+    }
+
+    @Override
+    public List<User> findAll() {
+        return jpaRepository.findAll().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public User updateRole(UUID id, Role role) {
+        UserJpaEntity e = jpaRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + id));
+        e.setRole(role);
         return mapper.toDomain(jpaRepository.save(e));
     }
 }

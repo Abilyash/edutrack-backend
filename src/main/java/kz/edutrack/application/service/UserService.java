@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -65,6 +66,16 @@ public class UserService implements GetCurrentUserUseCase, SyncUserUseCase {
     @Transactional
     public User updateName(UUID userId, String name) {
         return userRepository.updateName(userId, name);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> listAll() {
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public User changeRole(UUID id, Role role) {
+        return userRepository.updateRole(id, role);
     }
 
     private String extractNameFromEmail(String email) {

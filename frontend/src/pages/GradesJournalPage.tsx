@@ -106,6 +106,37 @@ export default function GradesJournalPage() {
     if (id) loadData(id)
   }, [id])
 
+  const exportCsv = () => {
+    const lines: string[] = [
+      '﻿Модуль,Тема,Студент,Файл,Дата сдачи,Оценка,Комментарий',
+    ]
+    rows.forEach(row => {
+      row.submissions.forEach(s => {
+        const student = studentNames[s.studentId] ?? s.studentId.substring(0, 8)
+        const date = new Date(s.submittedAt).toLocaleDateString('ru-RU')
+        const score = s.grade ? String(s.grade.score) : ''
+        const comment = s.grade?.comment ?? ''
+        const escape = (v: string) => `"${v.replace(/"/g, '""')}"`
+        lines.push([
+          escape(row.moduleTitle),
+          escape(row.topicTitle),
+          escape(student),
+          escape(s.fileName),
+          date,
+          score,
+          escape(comment),
+        ].join(','))
+      })
+    })
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `journal_${course?.title ?? 'course'}_${new Date().toLocaleDateString('ru-RU')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const openGradeModal = (submission: SubmissionDto) => {
     setGradingSubmission(submission)
     setGradeScore(submission.grade ? String(submission.grade.score) : '')
@@ -166,6 +197,17 @@ export default function GradesJournalPage() {
           <h1 className="text-2xl font-bold text-gray-900">Журнал успеваемости</h1>
           <p className="text-sm text-gray-400 mt-0.5">Все работы студентов по курсу</p>
         </div>
+        {totalSubmissions > 0 && (
+          <button
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-sm font-medium text-gray-600 rounded-xl hover:bg-gray-50 hover:border-gray-300 shadow-sm transition-colors"
+          >
+            <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Скачать CSV
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6">

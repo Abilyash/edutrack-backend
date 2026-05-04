@@ -41,6 +41,9 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
         if (topic.getDeadline() != null && Instant.now().isAfter(topic.getDeadline())) {
             throw new IllegalArgumentException("Срок сдачи по теме «" + topic.getTitle() + "» истёк");
         }
+        if (submissionRepository.existsByTopicIdAndStudentId(topicId, studentId)) {
+            throw new IllegalArgumentException("Вы уже сдали работу по этой теме");
+        }
 
         String safeName = UUID.randomUUID().toString().substring(0, 8)
                 + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");

@@ -12,6 +12,8 @@ import MySubmissionsPage from './pages/MySubmissionsPage'
 import GradesJournalPage from './pages/GradesJournalPage'
 import DashboardPage from './pages/DashboardPage'
 import MyCoursesPage from './pages/MyCoursesPage'
+import NotFoundPage from './pages/NotFoundPage'
+import RoleRoute from './components/RoleRoute'
 import Layout from './components/Layout'
 
 export default function App() {
@@ -42,12 +44,21 @@ export default function App() {
           <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
           <Route path="/" element={session ? <UserProvider><Layout /></UserProvider> : <Navigate to="/login" />}>
             <Route index element={<CoursesPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="dashboard" element={
+              <RoleRoute allow={['TEACHER', 'ADMIN']}><DashboardPage /></RoleRoute>
+            } />
             <Route path="courses/:id" element={<CoursePage />} />
             <Route path="profile" element={<ProfilePage />} />
-            <Route path="my-courses" element={<MyCoursesPage />} />
-            <Route path="my-submissions" element={<MySubmissionsPage />} />
-            <Route path="courses/:id/journal" element={<GradesJournalPage />} />
+            <Route path="my-courses" element={
+              <RoleRoute allow={['STUDENT']}><MyCoursesPage /></RoleRoute>
+            } />
+            <Route path="my-submissions" element={
+              <RoleRoute allow={['STUDENT']}><MySubmissionsPage /></RoleRoute>
+            } />
+            <Route path="courses/:id/journal" element={
+              <RoleRoute allow={['TEACHER', 'ADMIN']}><GradesJournalPage /></RoleRoute>
+            } />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </ToastProvider>

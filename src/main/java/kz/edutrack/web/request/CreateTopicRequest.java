@@ -7,6 +7,6 @@ import java.time.Instant;
 
 public record CreateTopicRequest(
         @NotBlank @Size(max = 200) String title,
-        String content,
+        @Size(max = 10000) String content,
         Instant deadline
 ) {}

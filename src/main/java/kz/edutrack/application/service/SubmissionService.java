@@ -36,6 +36,11 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     @Override
     @Transactional
     public Submission submit(UUID topicId, String fileName, byte[] content, String contentType, UUID studentId) {
+        Topic topic = courseRepository.findTopicById(topicId);
+        if (topic.getDeadline() != null && Instant.now().isAfter(topic.getDeadline())) {
+            throw new IllegalArgumentException("Срок сдачи по теме «" + topic.getTitle() + "» истёк");
+        }
+
         String safeName = UUID.randomUUID().toString().substring(0, 8)
                 + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
         String storagePath = "submissions/" + topicId + "/" + studentId + "/" + safeName;
@@ -64,7 +69,6 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
                 .build());
 
         try {
-            Topic topic = courseRepository.findTopicById(topicId);
             CourseModule module = courseRepository.findModuleById(topic.getModuleId());
             Course course = courseRepository.findCourseById(module.getCourseId()).orElseThrow();
             notificationRepository.save(Notification.builder()

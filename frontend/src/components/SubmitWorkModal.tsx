@@ -1,6 +1,22 @@
 import { useRef, useState } from 'react'
 import api from '../lib/api'
 
+const ALLOWED_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'application/zip',
+  'application/x-zip-compressed',
+  'image/jpeg',
+  'image/png',
+])
+const MAX_SIZE = 20 * 1024 * 1024 // 20 MB
+
 interface Props {
   topicId: string
   topicTitle: string
@@ -13,6 +29,22 @@ export default function SubmitWorkModal({ topicId, topicTitle, onClose, onSubmit
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (selected: File | null | undefined) => {
+    if (!selected) return
+    if (!ALLOWED_TYPES.has(selected.type)) {
+      setError('Недопустимый формат. Разрешены: PDF, Word, Excel, PowerPoint, TXT, ZIP, JPEG, PNG')
+      setFile(null)
+      return
+    }
+    if (selected.size > MAX_SIZE) {
+      setError('Файл слишком большой. Максимум — 20 МБ')
+      setFile(null)
+      return
+    }
+    setError('')
+    setFile(selected)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +94,8 @@ export default function SubmitWorkModal({ topicId, topicTitle, onClose, onSubmit
                 ref={inputRef}
                 type="file"
                 className="hidden"
-                onChange={e => setFile(e.target.files?.[0] ?? null)}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.jpg,.jpeg,.png"
+                onChange={e => handleFileChange(e.target.files?.[0])}
               />
               {file ? (
                 <div>
@@ -82,7 +115,7 @@ export default function SubmitWorkModal({ topicId, topicTitle, onClose, onSubmit
                     </svg>
                   </div>
                   <p className="text-sm font-medium text-gray-600">Нажмите чтобы выбрать файл</p>
-                  <p className="text-xs text-gray-400 mt-1">Любой формат файла</p>
+                  <p className="text-xs text-gray-400 mt-1">PDF, Word, Excel, PPT, TXT, ZIP, JPEG, PNG · до 20 МБ</p>
                 </div>
               )}
             </div>

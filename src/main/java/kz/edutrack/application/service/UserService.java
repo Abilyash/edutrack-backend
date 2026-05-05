@@ -37,9 +37,6 @@ public class UserService implements GetCurrentUserUseCase, SyncUserUseCase {
         boolean isNew = !userRepository.existsById(supabaseId);
 
         User user = userRepository.findById(supabaseId)
-                .map(existing -> existing.getRole() == role
-                        ? existing
-                        : userRepository.save(existing.withRole(role)))
                 .orElseGet(() -> userRepository.save(User.builder()
                         .id(supabaseId)
                         .email(email)

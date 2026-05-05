@@ -1,5 +1,6 @@
 package kz.edutrack.application.service;
 
+import kz.edutrack.application.dto.CompletionDto;
 import kz.edutrack.application.dto.GradeDto;
 import kz.edutrack.application.dto.SubmissionDto;
 import kz.edutrack.application.mapper.SubmissionMapper;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -97,6 +99,38 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
     @Transactional(readOnly = true)
     public List<Submission> getMySubmissions(UUID studentId) {
         return submissionRepository.findByStudentId(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public CompletionDto getCourseCompletion(UUID courseId, UUID studentId) {
+        Course course = courseRepository.findCourseById(courseId)
+                .orElseThrow(() -> new IllegalStateException("Course not found: " + courseId));
+
+        List<UUID> topicIds = course.getModules().stream()
+                .flatMap(m -> m.getTopics().stream())
+                .map(Topic::getId)
+                .toList();
+
+        int total = topicIds.size();
+        if (total == 0) {
+            return new CompletionDto(courseId, course.getTitle(), false, 0, 0, null);
+        }
+
+        List<Submission> submissions = submissionRepository.findByStudentId(studentId);
+
+        Map<UUID, Integer> bestScorePerTopic = new HashMap<>();
+        for (Submission s : submissions) {
+            if (s.getGrade() != null && topicIds.contains(s.getTopicId())) {
+                bestScorePerTopic.merge(s.getTopicId(), s.getGrade().getScore(), Math::max);
+            }
+        }
+
+        int graded = bestScorePerTopic.size();
+        boolean completed = graded == total;
+        Double avg = bestScorePerTopic.isEmpty() ? null
+                : bestScorePerTopic.values().stream().mapToInt(v -> v).average().orElse(0);
+
+        return new CompletionDto(courseId, course.getTitle(), completed, total, graded, avg);
     }
 
     @Transactional(readOnly = true)
@@ -180,6 +214,28 @@ public class SubmissionService implements SubmitWorkUseCase, GradeSubmissionUseC
                 .createdAt(Instant.now())
                 .build());
 
-        return submissionRepository.updateStatus(submissionId, SubmissionStatus.GRADED);
+        Submission graded = submissionRepository.updateStatus(submissionId, SubmissionStatus.GRADED);
+
+        // Уведомление преподавателю, если студент завершил весь курс
+        if (existing == null) {
+            try {
+                Topic topic = courseRepository.findTopicById(submission.getTopicId());
+                CourseModule module = courseRepository.findModuleById(topic.getModuleId());
+                Course course = courseRepository.findCourseById(module.getCourseId()).orElseThrow();
+                CompletionDto completion = getCourseCompletion(course.getId(), submission.getStudentId());
+                if (completion.completed()) {
+                    int avg = completion.averageScore() != null ? (int) Math.round(completion.averageScore()) : 0;
+                    notificationRepository.save(Notification.builder()
+                            .id(UUID.randomUUID())
+                            .userId(course.getTeacherId())
+                            .message("Студент завершил курс «" + course.getTitle() + "» — все темы проверены. Средний балл: " + avg + "/100")
+                            .read(false)
+                            .createdAt(Instant.now())
+                            .build());
+                }
+            } catch (Exception ignored) {}
+        }
+
+        return graded;
     }
 }

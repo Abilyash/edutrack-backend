@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-05T14:47:03+0500",
-    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-05-05T16:56:41+0500",
+    comments = "version: 1.6.3, compiler: javac, environment: Java 17.0.18 (Eclipse Adoptium)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -48,11 +48,11 @@ public class UserMapperImpl implements UserMapper {
 
         User.UserBuilder user = User.builder();
 
-        user.createdAt( entity.getCreatedAt() );
-        user.email( entity.getEmail() );
         user.id( entity.getId() );
+        user.email( entity.getEmail() );
         user.name( entity.getName() );
         user.role( entity.getRole() );
+        user.createdAt( entity.getCreatedAt() );
 
         return user.build();
     }
@@ -65,11 +65,11 @@ public class UserMapperImpl implements UserMapper {
 
         UserJpaEntity.UserJpaEntityBuilder userJpaEntity = UserJpaEntity.builder();
 
-        userJpaEntity.createdAt( user.getCreatedAt() );
-        userJpaEntity.email( user.getEmail() );
         userJpaEntity.id( user.getId() );
+        userJpaEntity.email( user.getEmail() );
         userJpaEntity.name( user.getName() );
         userJpaEntity.role( user.getRole() );
+        userJpaEntity.createdAt( user.getCreatedAt() );
 
         return userJpaEntity.build();
     }

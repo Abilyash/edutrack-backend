@@ -13,6 +13,7 @@ import GradesJournalPage from './pages/GradesJournalPage'
 import DashboardPage from './pages/DashboardPage'
 import MyCoursesPage from './pages/MyCoursesPage'
 import AdminPage from './pages/AdminPage'
+import CertificatePage from './pages/CertificatePage'
 import NotFoundPage from './pages/NotFoundPage'
 import RoleRoute from './components/RoleRoute'
 import Layout from './components/Layout'
@@ -43,6 +44,7 @@ export default function App() {
       <ToastProvider>
         <Routes>
           <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/courses/:id/certificate" element={session ? <UserProvider><CertificatePage /></UserProvider> : <Navigate to="/login" />} />
           <Route path="/" element={session ? <UserProvider><Layout /></UserProvider> : <Navigate to="/login" />}>
             <Route index element={<CoursesPage />} />
             <Route path="dashboard" element={

@@ -1,6 +1,7 @@
 package kz.edutrack.web.controller;
 
 import jakarta.validation.Valid;
+import kz.edutrack.application.dto.CompletionDto;
 import kz.edutrack.application.dto.SubmissionDto;
 import kz.edutrack.application.mapper.SubmissionMapper;
 import kz.edutrack.domain.port.in.GradeSubmissionUseCase;
@@ -80,6 +81,13 @@ public class SubmissionController {
     @PreAuthorize("hasAnyRole('TEACHER','ADMIN')")
     public List<SubmissionDto> byTopic(@PathVariable UUID topicId) {
         return gradeSubmission.getSubmissionsByTopic(topicId).stream().map(mapper::toDto).toList();
+    }
+
+    @GetMapping("/courses/{courseId}/my-completion")
+    @PreAuthorize("hasRole('STUDENT')")
+    public CompletionDto myCourseCompletion(@PathVariable UUID courseId, @AuthenticationPrincipal Jwt jwt) {
+        UUID studentId = UUID.fromString(jwt.getSubject());
+        return submissionService.getCourseCompletion(courseId, studentId);
     }
 
     @GetMapping("/my")
